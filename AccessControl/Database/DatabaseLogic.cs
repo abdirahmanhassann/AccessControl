@@ -1,5 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
+using Twilio.Rest.Voice.V1;
+using static AccessControl.Model.Model;
 
 namespace AccessControl.Database
 {
@@ -387,7 +389,7 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public void InsertWorker(
+        public int InsertWorker(
             string firstName,
             string lastName,
             string phoneNumber,
@@ -419,7 +421,7 @@ namespace AccessControl.Database
                     companyName,
                     200));
 
-            _conn.ExecuteStoredProcedureNoReturn(
+           return _conn.ExecuteStoredProcedureAsScalarInt(
                 "WorkersInsert",
                 sqlParams.ToArray());
         }
@@ -691,24 +693,23 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public void InsertAccessRequest(
-            int workerId,
-            int roomId,
-            string reason,
-            string workType,
-            string? description)
+        public int InsertAccessRequest(string phoneNumber, int workerId, int roomId, string reason, string workType, string? description)
         {
             List<SqlParameter> sqlParams = new();
 
             sqlParams.Add(
                 _conn.GenerateInputInteger(
-                    "@WorkerId",
-                    workerId));
-
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
                     "@RoomId",
                     roomId));
+            sqlParams.Add(
+    _conn.GenerateInputInteger(
+        "@WorkerId",
+        workerId));
+            sqlParams.Add(
+    _conn.GenerateInputString(
+        "@PhoneNumber",
+        phoneNumber,
+        500));
 
             sqlParams.Add(
                 _conn.GenerateInputString(
@@ -728,9 +729,7 @@ namespace AccessControl.Database
                     description,
                     1000));
 
-            _conn.ExecuteStoredProcedureNoReturn(
-                "AccessRequestsInsert",
-                sqlParams.ToArray());
+          return  _conn.ExecuteStoredProcedureAsScalarInt("AccessRequestsInsert", sqlParams.ToArray());
         }
 
         public void UpdateAccessRequest(
@@ -853,12 +852,23 @@ namespace AccessControl.Database
                 "AccessRequestApprovalsGet",
                 sqlParams.ToArray());
         }
+        public DataRow GetRoomByAccessRequestId(int accessRequestId)
+        {
+            List<SqlParameter> sqlParams = new();
+                sqlParams.Add(
+        _conn.GenerateInputInteger(
+            "@AccessRequestId",
+            accessRequestId));
+
+            return _conn.ExecuteStoredProcedureAsDataRow(
+                "RoomsGetByAccessRequestId",
+                sqlParams.ToArray());
+        }
+
 
         public void InsertAccessRequestApproval(
             int accessRequestId,
-            int approverUserId,
-            string status,
-            string? comment)
+            int approverUserId)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -871,18 +881,6 @@ namespace AccessControl.Database
                 _conn.GenerateInputInteger(
                     "@ApproverUserId",
                     approverUserId));
-
-            sqlParams.Add(
-                _conn.GenerateInputString(
-                    "@Status",
-                    status,
-                    50));
-
-            sqlParams.Add(
-                _conn.GenerateInputString(
-                    "@Comment",
-                    comment,
-                    1000));
 
             _conn.ExecuteStoredProcedureNoReturn(
                 "AccessRequestApprovalsInsert",
@@ -890,26 +888,18 @@ namespace AccessControl.Database
         }
 
         public void UpdateAccessRequestApproval(
-            int id,
             int accessRequestId,
-            int approverUserId,
             string status,
             string? comment)
         {
             List<SqlParameter> sqlParams = new();
 
-            sqlParams.Add(
-                _conn.GenerateInputInteger("@Id", id));
 
             sqlParams.Add(
                 _conn.GenerateInputInteger(
-                    "@AccessRequestId",
+                    "@Id",
                     accessRequestId));
 
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@ApproverUserId",
-                    approverUserId));
 
             sqlParams.Add(
                 _conn.GenerateInputString(
@@ -1081,7 +1071,12 @@ namespace AccessControl.Database
                 "OTPVerificationsGet",
                 sqlParams.ToArray());
         }
-
+        public DataRow VerifyOTP(int code)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputInteger("@Code", code));
+            return _conn.ExecuteStoredProcedureAsDataRow("OTPVerify", sqlParams.ToArray());
+        }
         public void InsertOTPVerification(
             string phoneNumber,
             int codeHash,
@@ -1400,6 +1395,6 @@ namespace AccessControl.Database
             _conn.ExecuteStoredProcedureNoReturn(
                 "AuditEventsInsert",
                 sqlParams.ToArray());
-            }
         }
     }
+}

@@ -1,8 +1,6 @@
-﻿using System.Data.SqlTypes;
-using static System.Text.Encoding;
+﻿using AccessControl.Database;
 using System.Security.Cryptography;
-using System.Text.Unicode;
-using AccessControl.Database;
+using static System.Text.Encoding;
 namespace AccessControl.Security
 {
     public class Encryptor

@@ -1,43 +1,42 @@
-﻿using System.Security.Cryptography;
-using static AccessControl.Model.ApiResponses;
+﻿using static AccessControl.Model.ApiResponses;
 namespace AccessControl.Helpers
 {
-        public class ApiHelper
+    public class ApiHelper
+    {
+        public const string GENERIC_ERROR = "A non-specific error occurred. Please contact support for assistance.";
+        public const string TOKEN_ERROR = "Token invalid or expired";
+
+        public static GenericResponse CreateSuccessResponseNoData()
         {
-            public const string GENERIC_ERROR = "A non-specific error occurred. Please contact support for assistance.";
-            public const string TOKEN_ERROR = "Token invalid or expired";
-
-            public static GenericResponse CreateSuccessResponseNoData()
+            GenericResponse resp = new GenericResponse()
             {
-                GenericResponse resp = new GenericResponse()
-                {
-                    Result = true
-                };
+                Result = true
+            };
 
-                return resp;
-            }
+            return resp;
+        }
 
-            public static GenericResponse CreateSuccessResponseWithData(object data)
+        public static GenericResponse CreateSuccessResponseWithData(object data)
+        {
+            GenericResponse resp = new GenericResponse()
             {
-                GenericResponse resp = new GenericResponse()
-                {
-                    Result = true,
-                    Data = data
-                };
+                Result = true,
+                Data = data
+            };
 
-                return resp;
-            }
+            return resp;
+        }
 
-            public static GenericResponse CreateFailureResponse(string message)
+        public static GenericResponse CreateFailureResponse(string message)
+        {
+            GenericResponse resp = new GenericResponse()
             {
-                GenericResponse resp = new GenericResponse()
-                {
-                    Result = false,
-                    ErrorMessage = message
-                };
+                Result = false,
+                ErrorMessage = message
+            };
 
-                return resp;
-            }
+            return resp;
+        }
         public static int GenerateNumericOtp()
         {
             Random random = new Random();

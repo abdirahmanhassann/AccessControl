@@ -1,10 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using Twilio;
+﻿using Twilio;
 using Twilio.Exceptions;
 using Twilio.Rest.Api.V2010.Account;
 using Twilio.Rest.Verify.V2.Service;
-using Twilio.TwiML.Voice;
 using Twilio.Types;
 
 public class TwilioHelper
@@ -47,6 +44,22 @@ public class TwilioHelper
             to: new PhoneNumber(toNumber)
         );
     }
+    public async Task<MessageResource> StatusUpdateAsync(string status, string toNumber, string roomName,string comment)
+    {
+        string smsBody = $"Your access request to {roomName} has been {status}.";
+        if (status == "REJECTED")
+        {
+            smsBody += $"REASON: {comment}";
+        }
+        if (string.IsNullOrWhiteSpace(status)) throw new ArgumentException(nameof(status));
+        return await MessageResource.CreateAsync(
+            body: smsBody,
+            from: new PhoneNumber(_fromNumber),
+            to: new PhoneNumber(toNumber)
+        );
+    }
+
+
 
     // Use Verify service to send verification via requested channel (toNumber provided at call time)
     public async Task<VerificationResource> SendVerificationAsync(string toNumber, string channel = "sms", string fallbackChannel = null)

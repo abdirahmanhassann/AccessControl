@@ -135,7 +135,6 @@
 
         public struct InsertWorkerRequest
         {
-            public string Token { get; set; }
             public string FirstName { get; set; }
             public string LastName { get; set; }
             public string PhoneNumber { get; set; }
@@ -211,8 +210,8 @@
 
         public struct InsertAccessRequestRequest
         {
-            public string Token { get; set; }
-            public int WorkerId { get; set; }
+            public string PhoneNumber { get; set; }
+            public int workerId { get; set; }
             public int RoomId { get; set; }
             public string Reason { get; set; }
             public string WorkType { get; set; }
@@ -247,8 +246,8 @@
             public string Token { get; set; }
             public int AccessRequestId { get; set; }
             public int ApproverUserId { get; set; }
-            public string Status { get; set; }
-            public string Comment { get; set; }
+            public string status { get;set; }
+            public string comment { get; set; }
         }
 
         public struct UpdateAccessRequestApprovalRequest
@@ -303,7 +302,10 @@
             public string PhoneNumber { get; set; }
             public DateTime ExpiresAt { get; set; }
         }
-
+        public struct VerifyOTP
+        {
+            public int code { get; set; }
+        }
         public struct UpdateOTPVerificationRequest
         {
             public string Token { get; set; }
