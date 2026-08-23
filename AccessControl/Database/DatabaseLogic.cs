@@ -11,6 +11,24 @@ namespace AccessControl.Database
         {
             _conn = new(connectionString, keepAlive);
         }
+        public void Signup(string email, string firstName, string lastName, string password, string salt, string phoneNumber)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputString("@Email", email, 255));
+            sqlParams.Add(_conn.GenerateInputString("@FirstName", firstName, 100));
+            sqlParams.Add(_conn.GenerateInputString("@lastName", lastName, 100));
+            sqlParams.Add(_conn.GenerateInputString("@Password", password, 50));
+            sqlParams.Add(_conn.GenerateInputString("@Salt", salt, 50));
+            sqlParams.Add(_conn.GenerateInputString("@PhoneNumber", phoneNumber));
+            _conn.ExecuteStoredProcedureNoReturn("CreateUser", sqlParams.ToArray());
+        }
+        public DataRow GetAccountByEmail(string email)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputString("@Email", email, 255));
+            return _conn.ExecuteStoredProcedureAsDataRow("GetUserByEmail", sqlParams.ToArray());
+        }
+
         public void LogError(string source, string message, int userId)
         {
             List<SqlParameter> sqlParams = new();
@@ -452,7 +470,20 @@ namespace AccessControl.Database
                 "WorkersUpdate",
                 sqlParams.ToArray());
         }
+        public DataRow GetRoomByQrCode(string qrCodeIdentifier)
+        {
+            List<SqlParameter> sqlParams = new();
 
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@QrCodeIdentifier",
+                    qrCodeIdentifier,
+                    100));
+
+            return _conn.ExecuteStoredProcedureAsDataRow(
+                "RoomsGetByQrCode",
+                sqlParams.ToArray());
+        }
 
         // ============================================================
         // ROOMS
@@ -471,7 +502,6 @@ namespace AccessControl.Database
             int workAreaId,
             string roomNumber,
             string? name,
-            string qrCodeIdentifier,
             string? description)
         {
             List<SqlParameter> sqlParams = new();
@@ -491,12 +521,6 @@ namespace AccessControl.Database
                 _conn.GenerateInputString(
                     "@Name",
                     name,
-                    200));
-
-            sqlParams.Add(
-                _conn.GenerateInputString(
-                    "@QrCodeIdentifier",
-                    qrCodeIdentifier,
                     200));
 
             sqlParams.Add(
@@ -1059,20 +1083,11 @@ namespace AccessControl.Database
         }
 
         public void InsertOTPVerification(
-            int? workerId,
             string phoneNumber,
-            string codeHash,
+            int codeHash,
             DateTime expiresAt)
         {
             List<SqlParameter> sqlParams = new();
-
-            if (workerId.HasValue)
-            {
-                sqlParams.Add(
-                    _conn.GenerateInputInteger(
-                        "@WorkerId",
-                        workerId.Value));
-            }
 
             sqlParams.Add(
                 _conn.GenerateInputString(
@@ -1081,10 +1096,9 @@ namespace AccessControl.Database
                     30));
 
             sqlParams.Add(
-                _conn.GenerateInputString(
+                _conn.GenerateInputInteger(
                     "@CodeHash",
-                    codeHash,
-                    500));
+                    codeHash));
 
             sqlParams.Add(
                 _conn.GenerateInputDateTime(

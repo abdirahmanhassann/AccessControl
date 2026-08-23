@@ -1,3 +1,6 @@
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -23,5 +26,6 @@ app.UseCors(corsPolicyBuilder =>
     .AllowAnyMethod()
     .AllowAnyHeader();
 });
+
 app.Run();
 

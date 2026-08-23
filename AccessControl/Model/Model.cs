@@ -16,7 +16,25 @@
             public DateTime CreatedAt;
         }
 
+        public class ScannedRoom
+        {
+            public int Id;
+            public int WorkAreaId;
+            public string RoomNumber;
+            public string Name;
+            public string QrCodeIdentifier;
+            public string Description;
+            public bool IsActive;
+            public DateTime CreatedAt;
 
+            public string WorkAreaName;
+            public string WorkAreaDescription;
+
+            public int SiteId;
+            public string SiteName;
+            public string SiteAddress;
+            public string SiteReference;
+        }
         // ============================================================
         // WORK AREA
         // ============================================================

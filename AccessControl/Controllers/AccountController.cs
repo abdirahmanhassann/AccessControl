@@ -1,11 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using AccessControl.Model;
 using AccessControl.Processor;
-using static AccessControl.Model.ApiResponses;
+using AccessControl.Security;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using static AccessControl.Helpers.ApiHelper;
 using static AccessControl.Model.ApiRequests;
-using AccessControl.Security;
+using static AccessControl.Model.ApiResponses;
 
 namespace AccessControl.Controllers
 {
@@ -20,6 +21,31 @@ namespace AccessControl.Controllers
         {
             _proc = new AccessProcessor(config);
             _security = new(config);
+        }
+
+        [HttpPost("login")]
+        public string Login(LoginRequest req)
+        {
+            GenericResponse ret = _proc.Login(req.Email, req.Password);
+            return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("signup")]
+        public string Signup(CreateUserRequest req)
+        {
+            GenericResponse ret = _proc.SignUp(req.Email, req.FirstName,req.LastName, req.Password,req.PhoneNumber);
+            return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("scanqr")]
+        public string ScanQrCode(ScanQrCodeRequest req)
+        {
+            GenericResponse ret = _proc.ScanQrCode(
+                req.QrCodeIdentifier);
+
+            return JsonConvert.SerializeObject(
+                ret,
+                Newtonsoft.Json.Formatting.Indented);
         }
 
 
@@ -493,7 +519,6 @@ namespace AccessControl.Controllers
                 req.WorkAreaId,
                 req.RoomNumber,
                 req.Name,
-                req.QrCodeIdentifier,
                 req.Description);
 
             return JsonConvert.SerializeObject(
@@ -932,26 +957,12 @@ namespace AccessControl.Controllers
 
 
         [HttpPost("insertotpverification")]
-        public string InsertOTPVerification(
-            InsertOTPVerificationRequest req)
+        public async Task<string> InsertOTPVerification(
+          InsertOTPVerificationRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
 
-            if (accountId < 1)
-            {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
-            }
-
-            GenericResponse ret = _proc.InsertOTPVerification(
-                (int)accountId,
-                req.WorkerId,
+            GenericResponse ret =await _proc.InsertOTPVerification(
                 req.PhoneNumber,
-                req.CodeHash,
                 req.ExpiresAt);
 
             return JsonConvert.SerializeObject(
