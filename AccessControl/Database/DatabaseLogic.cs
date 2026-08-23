@@ -380,9 +380,11 @@ namespace AccessControl.Database
         // WORKERS
         // ============================================================
 
-        public DataTable GetWorkers()
+        public DataTable GetWorkers(int? id)
         {
             List<SqlParameter> sqlParams = new();
+                sqlParams.Add(
+        _conn.GenerateInputInteger("@Id", id.Value));
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "WorkersGet",
@@ -491,10 +493,13 @@ namespace AccessControl.Database
         // ROOMS
         // ============================================================
 
-        public DataTable GetRooms()
+        public DataTable GetRooms(int? id)
         {
             List<SqlParameter> sqlParams = new();
-
+                    sqlParams.Add(
+            _conn.GenerateInputInteger(
+                "@Id",
+                id.Value));
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "RoomsGet",
                 sqlParams.ToArray());

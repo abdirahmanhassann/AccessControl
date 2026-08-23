@@ -661,10 +661,10 @@ namespace AccessControl.Controllers
 
 
         [HttpPost("insertaccessrequest")]
-        public string InsertAccessRequest(
+        public async Task<string> InsertAccessRequest(
             InsertAccessRequestRequest req)
         {
-            GenericResponse ret = _proc.InsertAccessRequest(
+            GenericResponse ret = await _proc.InsertAccessRequest(
                 req.PhoneNumber,
                 req.workerId,
                 req.RoomId,
