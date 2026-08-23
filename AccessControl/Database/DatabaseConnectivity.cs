@@ -48,7 +48,13 @@ namespace AccessControl.Database
                 Value = val
             };
         }
-
+        public SqlParameter GenerateInputVarBinary(string paramName, byte val, int length = 2000)
+        {
+            return new SqlParameter(paramName, SqlDbType.VarBinary, length)
+            {
+                Value = (object)val ?? DBNull.Value
+            };
+        }
         public SqlParameter GenerateInputDateTime(string paramName, DateTime val)
         {
             return new SqlParameter(paramName, SqlDbType.DateTime)

@@ -1,4 +1,5 @@
-﻿using static AccessControl.Model.ApiResponses;
+﻿using System.Security.Cryptography;
+using static AccessControl.Model.ApiResponses;
 namespace AccessControl.Helpers
 {
         public class ApiHelper
@@ -37,5 +38,12 @@ namespace AccessControl.Helpers
 
                 return resp;
             }
+        public static int GenerateNumericOtp()
+        {
+            Random random = new Random();
+            int code = random.Next(100000, 1000000);
+            return code;
         }
+
+    }
 }

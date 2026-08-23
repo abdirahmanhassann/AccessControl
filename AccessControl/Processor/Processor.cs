@@ -1,8 +1,10 @@
 ﻿using AccessControl.Database;
-using static AccessControl.Helpers.ApiHelper;
-using static AccessControl.Model.ApiResponses;
+using AccessControl.Helpers;
+using AccessControl.Security;
 using System.Data;
 using System.Reflection;
+using static AccessControl.Helpers.ApiHelper;
+using static AccessControl.Model.ApiResponses;
 
 namespace AccessControl.Processor
 {
@@ -24,6 +26,62 @@ namespace AccessControl.Processor
         // ============================================================
         // SITES
         // ============================================================
+        public GenericResponse Login(string email, string password)
+        {
+            try
+            {
+
+                // ###TODO: log IP address? (for multiple account detection, new device login check)
+                // ###TODO: log browser agent? (for multiple account detection, new device login check)
+
+                DataRow dr = _db.GetAccountByEmail(email);
+                if (dr == null)
+                {
+                    return CreateFailureResponse("Either the email specified is not signed up, or the password is incorrect");
+                } 
+
+                Encryptor enc = new(_config);
+                string salt = dr.Field<string>("Salt")!;
+                string pwdEncrypted = enc.Encrypt(password, salt);
+                if (pwdEncrypted != dr.Field<string>("Password"))
+                {
+                    return CreateFailureResponse("Either the email specified is not signed up, or the password is incorrect");
+                }
+
+                string token = Guid.NewGuid().ToString();
+                _db.AddAccessToken(dr.Field<int>("Id"), token);
+
+                return CreateSuccessResponseWithData(token);
+            }
+            catch (Exception ex)
+            {
+                // We do not have a userId at this point, so log under account 0
+                _db.LogError(MethodBase.GetCurrentMethod()?.Module + "/" + MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace, 0);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse SignUp(string email, string firstName, string lastName, string password, string phoneNumber)
+        {
+            try
+            {
+                // ###TODO check for profanity in displayName or Shop
+                Encryptor enc = new(_config);
+                string salt = enc.GenerateRandomSalt();
+                string pwdEncrypted = enc.Encrypt(password, salt);
+
+                _db.Signup(email, firstName, lastName, pwdEncrypted, salt, phoneNumber );
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                // We do not have a userId at this point, so log under account 0
+                _db.LogError(MethodBase.GetCurrentMethod()?.Module + "/" + MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace, 0);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
 
         public GenericResponse GetSites(int userId)
         {
@@ -469,13 +527,38 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
+        public GenericResponse ScanQrCode(string qrCodeIdentifier)
+        {
+            try
+            {
+                DataRow dr = _db.GetRoomByQrCode(qrCodeIdentifier);
+
+                if (dr == null)
+                {
+                    return CreateFailureResponse(
+                        "The QR code is invalid or the room is no longer active.");
+                }
+
+                return CreateSuccessResponseWithData(dr);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
 
         public GenericResponse InsertRoom(
             int userId,
             int workAreaId,
             string roomNumber,
             string? name,
-            string qrCodeIdentifier,
             string? description)
         {
             try
@@ -484,7 +567,6 @@ namespace AccessControl.Processor
                     workAreaId,
                     roomNumber,
                     name,
-                    qrCodeIdentifier,
                     description);
 
                 return CreateSuccessResponseNoData();
@@ -937,19 +1019,19 @@ namespace AccessControl.Processor
             }
         }
 
-        public GenericResponse InsertOTPVerification(
-            int userId,
-            int? workerId,
-            string phoneNumber,
-            string codeHash,
+        public async Task<GenericResponse> InsertOTPVerification(
+           string phoneNumber,
             DateTime expiresAt)
         {
             try
             {
+                TwilioHelper twilio = new();
+                int code = ApiHelper.GenerateNumericOtp();
+                await twilio.SendMessageAsync(phoneNumber, code);
+
                 _db.InsertOTPVerification(
-                    workerId,
                     phoneNumber,
-                    codeHash,
+                    code,
                     expiresAt);
 
                 return CreateSuccessResponseNoData();
@@ -959,8 +1041,7 @@ namespace AccessControl.Processor
                 _db.LogError(
                     MethodBase.GetCurrentMethod()?.Module + "/" +
                     MethodBase.GetCurrentMethod()?.Name!,
-                    ex.Message + " " + ex.StackTrace,
-                    userId);
+                    ex.Message + " " + ex.StackTrace,0);
 
                 return CreateFailureResponse(GENERIC_ERROR);
             }

@@ -89,6 +89,22 @@
             public string Role { get; set; }
             public bool IsActive { get; set; }
         }
+        public struct ScanQrCodeRequest
+        {
+            public string QrCodeIdentifier { get; set; }
+        }
+        public struct CreateUserRequest
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public string Email { get; set; }
+            public string PhoneNumber { get; set; }
+            public string Password { get; set; }
+
+            public string Role { get; set; }
+            public bool IsActive { get; set; }
+        }
+
 
 
         // ============================================================
@@ -148,7 +164,6 @@
             public int WorkAreaId { get; set; }
             public string RoomNumber { get; set; }
             public string Name { get; set; }
-            public string QrCodeIdentifier { get; set; }
             public string Description { get; set; }
         }
 
@@ -285,10 +300,7 @@
 
         public struct InsertOTPVerificationRequest
         {
-            public string Token { get; set; }
-            public int WorkerId { get; set; }
             public string PhoneNumber { get; set; }
-            public string CodeHash { get; set; }
             public DateTime ExpiresAt { get; set; }
         }
 

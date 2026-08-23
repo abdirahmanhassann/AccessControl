@@ -8,5 +8,6 @@
             public string ErrorMessage;
             public object Data;
         }
+
     }
 }
