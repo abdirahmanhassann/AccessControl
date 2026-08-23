@@ -425,7 +425,7 @@ namespace AccessControl.Processor
         {
             try
             {
-                DataTable dt = _db.GetWorkers();
+                DataTable dt = _db.GetWorkers(null);
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -511,7 +511,7 @@ namespace AccessControl.Processor
         {
             try
             {
-                DataTable dt = _db.GetRooms();
+                DataTable dt = _db.GetRooms(null);
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -729,7 +729,7 @@ namespace AccessControl.Processor
             }
         }
 
-        public GenericResponse InsertAccessRequest(
+        public async Task<GenericResponse> InsertAccessRequest(
             string phoneNumber,
             int workerId,
             int roomId,
@@ -748,6 +748,24 @@ namespace AccessControl.Processor
                     description);
                 //Allow functionality to allow any manager to approve
                 _db.InsertAccessRequestApproval(dr,1);
+                DataTable dt = _db.GetWorkers(workerId);
+                DataTable dt2 = _db.GetRooms(roomId);
+                string firstname = "", lastname = "", sitename = "", workareaname = "", roomname = "";
+                if(dt.Rows.Count > 0)
+                {
+                    firstname = dt.Rows[0].Field<string>("FirstName")!;
+                    lastname = dt.Rows[0].Field<string>("LastName")!;
+
+                }
+                if(dt2.Rows.Count > 0)
+                {
+                    sitename = dt2.Rows[0].Field<string>("SiteName")!;
+                    workareaname = dt2.Rows[0].Field<string>("WorkAreaName")!;
+                    roomname = dt2.Rows[0].Field<string>("RoomName")!;
+                }
+
+                TwilioHelper twilio = new();
+                await twilio.ApprovalRequestAsync(firstname,lastname,sitename,workareaname,roomname,phoneNumber);
                 return CreateSuccessResponseNoData();
             }
             catch (Exception ex)

@@ -58,6 +58,16 @@ public class TwilioHelper
             to: new PhoneNumber(toNumber)
         );
     }
+    public async Task<MessageResource> ApprovalRequestAsync(string firstname, string lastname,string site, string workarea, string roomName, string toNumber)
+    {
+        string smsBody = $"Access request from {firstname} {lastname} has been sent to TOWER: {site}, Apartment: {workarea}, Room: {roomName}.";
+        if (string.IsNullOrWhiteSpace(toNumber)) throw new ArgumentException(nameof(toNumber));
+        return await MessageResource.CreateAsync(
+            body: smsBody,
+            from: new PhoneNumber(_fromNumber),
+            to: new PhoneNumber(toNumber)
+        );
+    }
 
 
 
