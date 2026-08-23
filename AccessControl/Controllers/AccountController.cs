@@ -1,4 +1,3 @@
-using AccessControl.Model;
 using AccessControl.Processor;
 using AccessControl.Security;
 using Microsoft.AspNetCore.Identity.Data;
@@ -33,7 +32,7 @@ namespace AccessControl.Controllers
         [HttpPost("signup")]
         public string Signup(CreateUserRequest req)
         {
-            GenericResponse ret = _proc.SignUp(req.Email, req.FirstName,req.LastName, req.Password,req.PhoneNumber);
+            GenericResponse ret = _proc.SignUp(req.Email, req.FirstName, req.LastName, req.Password, req.PhoneNumber);
             return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
         }
 
@@ -417,20 +416,7 @@ namespace AccessControl.Controllers
         [HttpPost("insertworker")]
         public string InsertWorker(InsertWorkerRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
-
-            if (accountId < 1)
-            {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
-            }
-
             GenericResponse ret = _proc.InsertWorker(
-                (int)accountId,
                 req.FirstName,
                 req.LastName,
                 req.PhoneNumber,
@@ -678,21 +664,9 @@ namespace AccessControl.Controllers
         public string InsertAccessRequest(
             InsertAccessRequestRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
-
-            if (accountId < 1)
-            {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
-            }
-
             GenericResponse ret = _proc.InsertAccessRequest(
-                (int)accountId,
-                req.WorkerId,
+                req.PhoneNumber,
+                req.workerId,
                 req.RoomId,
                 req.Reason,
                 req.WorkType,
@@ -791,9 +765,8 @@ namespace AccessControl.Controllers
                 _proc.InsertAccessRequestApproval(
                     (int)accountId,
                     req.AccessRequestId,
-                    req.ApproverUserId,
-                    req.Status,
-                    req.Comment);
+                    req.ApproverUserId
+                    );
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -802,7 +775,7 @@ namespace AccessControl.Controllers
 
 
         [HttpPost("updateaccessrequestapproval")]
-        public string UpdateAccessRequestApproval(
+        public async Task<string> UpdateAccessRequestApproval(
             UpdateAccessRequestApprovalRequest req)
         {
             int accountId = _security.CheckToken(req.Token);
@@ -817,12 +790,10 @@ namespace AccessControl.Controllers
                     });
             }
 
-            GenericResponse ret =
-                _proc.UpdateAccessRequestApproval(
-                    (int)accountId,
-                    req.Id,
+           GenericResponse ret =
+           await   _proc.UpdateAccessRequestApproval(
                     req.AccessRequestId,
-                    req.ApproverUserId,
+                    (int)accountId,
                     req.Status,
                     req.Comment);
 
@@ -961,9 +932,19 @@ namespace AccessControl.Controllers
           InsertOTPVerificationRequest req)
         {
 
-            GenericResponse ret =await _proc.InsertOTPVerification(
+            GenericResponse ret = await _proc.InsertOTPVerification(
                 req.PhoneNumber,
                 req.ExpiresAt);
+
+            return JsonConvert.SerializeObject(
+                ret,
+                Newtonsoft.Json.Formatting.Indented);
+        }
+        [HttpPost("verifyotp")]
+        public string VerifyOTP(VerifyOTP req)
+        {
+
+            GenericResponse ret = _proc.VerifyOTP(req.code);
 
             return JsonConvert.SerializeObject(
                 ret,

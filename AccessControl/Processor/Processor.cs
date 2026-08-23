@@ -38,7 +38,7 @@ namespace AccessControl.Processor
                 if (dr == null)
                 {
                     return CreateFailureResponse("Either the email specified is not signed up, or the password is incorrect");
-                } 
+                }
 
                 Encryptor enc = new(_config);
                 string salt = dr.Field<string>("Salt")!;
@@ -71,7 +71,7 @@ namespace AccessControl.Processor
                 string salt = enc.GenerateRandomSalt();
                 string pwdEncrypted = enc.Encrypt(password, salt);
 
-                _db.Signup(email, firstName, lastName, pwdEncrypted, salt, phoneNumber );
+                _db.Signup(email, firstName, lastName, pwdEncrypted, salt, phoneNumber);
                 return CreateSuccessResponseNoData();
             }
             catch (Exception ex)
@@ -442,7 +442,6 @@ namespace AccessControl.Processor
         }
 
         public GenericResponse InsertWorker(
-            int userId,
             string firstName,
             string lastName,
             string phoneNumber,
@@ -450,13 +449,13 @@ namespace AccessControl.Processor
         {
             try
             {
-                _db.InsertWorker(
+              int workerId =  _db.InsertWorker(
                     firstName,
                     lastName,
                     phoneNumber,
                     companyName);
 
-                return CreateSuccessResponseNoData();
+                return CreateSuccessResponseWithData(workerId);
             }
             catch (Exception ex)
             {
@@ -464,7 +463,7 @@ namespace AccessControl.Processor
                     MethodBase.GetCurrentMethod()?.Module + "/" +
                     MethodBase.GetCurrentMethod()?.Name!,
                     ex.Message + " " + ex.StackTrace,
-                    userId);
+                    0);
 
                 return CreateFailureResponse(GENERIC_ERROR);
             }
@@ -731,7 +730,7 @@ namespace AccessControl.Processor
         }
 
         public GenericResponse InsertAccessRequest(
-            int userId,
+            string phoneNumber,
             int workerId,
             int roomId,
             string reason,
@@ -740,13 +739,15 @@ namespace AccessControl.Processor
         {
             try
             {
-                _db.InsertAccessRequest(
+              int dr =  _db.InsertAccessRequest(
+                    phoneNumber,
                     workerId,
                     roomId,
                     reason,
                     workType,
                     description);
-
+                //Allow functionality to allow any manager to approve
+                _db.InsertAccessRequestApproval(dr,1);
                 return CreateSuccessResponseNoData();
             }
             catch (Exception ex)
@@ -755,7 +756,7 @@ namespace AccessControl.Processor
                     MethodBase.GetCurrentMethod()?.Module + "/" +
                     MethodBase.GetCurrentMethod()?.Name!,
                     ex.Message + " " + ex.StackTrace,
-                    userId);
+                    0);
 
                 return CreateFailureResponse(GENERIC_ERROR);
             }
@@ -836,17 +837,13 @@ namespace AccessControl.Processor
         public GenericResponse InsertAccessRequestApproval(
             int userId,
             int accessRequestId,
-            int approverUserId,
-            string status,
-            string? comment)
+            int approverUserId)
         {
             try
             {
                 _db.InsertAccessRequestApproval(
                     accessRequestId,
-                    approverUserId,
-                    status,
-                    comment);
+                    approverUserId);
 
                 return CreateSuccessResponseNoData();
             }
@@ -862,9 +859,7 @@ namespace AccessControl.Processor
             }
         }
 
-        public GenericResponse UpdateAccessRequestApproval(
-            int userId,
-            int id,
+        public async Task<GenericResponse> UpdateAccessRequestApproval(
             int accessRequestId,
             int approverUserId,
             string status,
@@ -873,12 +868,14 @@ namespace AccessControl.Processor
             try
             {
                 _db.UpdateAccessRequestApproval(
-                    id,
                     accessRequestId,
-                    approverUserId,
                     status,
                     comment);
 
+                DataRow dr = _db.GetRoomByAccessRequestId(accessRequestId);
+                TwilioHelper twilio = new();
+
+                await twilio.StatusUpdateAsync(status, dr.Field<string>("PhoneNumber")!.ToString(), dr.Field<string>("Name")!.ToString(), comment);
                 return CreateSuccessResponseNoData();
             }
             catch (Exception ex)
@@ -887,7 +884,7 @@ namespace AccessControl.Processor
                     MethodBase.GetCurrentMethod()?.Module + "/" +
                     MethodBase.GetCurrentMethod()?.Name!,
                     ex.Message + " " + ex.StackTrace,
-                    userId);
+                    approverUserId);
 
                 return CreateFailureResponse(GENERIC_ERROR);
             }
@@ -1018,6 +1015,29 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
+        public GenericResponse VerifyOTP(int code)
+        {
+            try
+            {
+                DataRow dr = _db.VerifyOTP(code);
+                if (dr.Field<int>("value")! == 1)
+                {
+                return CreateSuccessResponseWithData(dr);
+                }
+                 return CreateFailureResponse("Wrong Code provided");
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
 
         public async Task<GenericResponse> InsertOTPVerification(
            string phoneNumber,
@@ -1041,7 +1061,7 @@ namespace AccessControl.Processor
                 _db.LogError(
                     MethodBase.GetCurrentMethod()?.Module + "/" +
                     MethodBase.GetCurrentMethod()?.Name!,
-                    ex.Message + " " + ex.StackTrace,0);
+                    ex.Message + " " + ex.StackTrace, 0);
 
                 return CreateFailureResponse(GENERIC_ERROR);
             }
