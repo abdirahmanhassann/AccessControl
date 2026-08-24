@@ -766,7 +766,7 @@ namespace AccessControl.Processor
 
                 TwilioHelper twilio = new();
                 await twilio.ApprovalRequestAsync(firstname,lastname,sitename,workareaname,roomname,phoneNumber);
-                return CreateSuccessResponseNoData();
+                return CreateSuccessResponseWithData(dr);
             }
             catch (Exception ex)
             {
