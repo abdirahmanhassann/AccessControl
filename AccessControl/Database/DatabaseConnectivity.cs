@@ -45,6 +45,7 @@ namespace AccessControl.Database
         {
             return new SqlParameter(paramName, SqlDbType.NVarChar, length)
             {
+                
                 Value = val
             };
         }
@@ -55,6 +56,14 @@ namespace AccessControl.Database
                 Value = (object)val ?? DBNull.Value
             };
         }
+        public SqlParameter GenerateInputUniqueIdentifier(string paramName, Guid val, int length = 2000)
+        {
+            return new SqlParameter(paramName, SqlDbType.UniqueIdentifier, length)
+            {
+                Value = (object)val ?? DBNull.Value
+            };
+        }
+
         public SqlParameter GenerateInputDateTime(string paramName, DateTime val)
         {
             return new SqlParameter(paramName, SqlDbType.DateTime)
