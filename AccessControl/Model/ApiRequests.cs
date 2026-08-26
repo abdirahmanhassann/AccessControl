@@ -91,7 +91,7 @@
         }
         public struct ScanQrCodeRequest
         {
-            public string QrCodeIdentifier { get; set; }
+            public Guid QrCodeIdentifier { get; set; }
         }
         public struct CreateUserRequest
         {

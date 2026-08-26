@@ -526,7 +526,7 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-        public GenericResponse ScanQrCode(string qrCodeIdentifier)
+        public GenericResponse ScanQrCode(Guid qrCodeIdentifier)
         {
             try
             {
@@ -1065,7 +1065,8 @@ namespace AccessControl.Processor
             {
                 TwilioHelper twilio = new();
                 int code = ApiHelper.GenerateNumericOtp();
-                await twilio.SendMessageAsync(phoneNumber, code);
+                //COMMENTED OOUT FOR TESTING PURPOSES. DONT WANNA WASTE TEXT CREDITS
+               // await twilio.SendMessageAsync(phoneNumber, code);
 
                 _db.InsertOTPVerification(
                     phoneNumber,

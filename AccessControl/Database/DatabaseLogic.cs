@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
 using Twilio.Rest.Voice.V1;
+using Twilio.TwiML.Voice;
 using static AccessControl.Model.Model;
 
 namespace AccessControl.Database
@@ -474,12 +475,12 @@ namespace AccessControl.Database
                 "WorkersUpdate",
                 sqlParams.ToArray());
         }
-        public DataRow GetRoomByQrCode(string qrCodeIdentifier)
+        public DataRow GetRoomByQrCode(Guid qrCodeIdentifier)
         {
             List<SqlParameter> sqlParams = new();
 
             sqlParams.Add(
-                _conn.GenerateInputString(
+                _conn.GenerateInputUniqueIdentifier(
                     "@QrCodeIdentifier",
                     qrCodeIdentifier,
                     100));
