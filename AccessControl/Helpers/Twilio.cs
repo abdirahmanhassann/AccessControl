@@ -46,8 +46,8 @@ public class TwilioHelper
     }
     public async Task<MessageResource> StatusUpdateAsync(string status, string toNumber, string roomName,string comment)
     {
-        string smsBody = $"Your access request to {roomName} has been {status}.";
-        if (status == "REJECTED")
+        string smsBody = $"Your access request to {roomName} has been {status}. \r\n";
+        if (status == "REJECTED".ToLower())
         {
             smsBody += $"REASON: {comment}";
         }

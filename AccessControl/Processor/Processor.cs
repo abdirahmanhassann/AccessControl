@@ -1,10 +1,12 @@
 ﻿using AccessControl.Database;
 using AccessControl.Helpers;
 using AccessControl.Security;
+using Microsoft.IdentityModel.Abstractions;
 using System.Data;
 using System.Reflection;
 using static AccessControl.Helpers.ApiHelper;
 using static AccessControl.Model.ApiResponses;
+using static AccessControl.Model.Model;
 
 namespace AccessControl.Processor
 {
@@ -704,11 +706,6 @@ namespace AccessControl.Processor
             }
         }
 
-
-        // ============================================================
-        // ACCESS REQUESTS
-        // ============================================================
-
         public GenericResponse GetAccessRequests(int userId)
         {
             try
@@ -826,12 +823,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-
-        // ============================================================
-        // ACCESS REQUEST APPROVALS
-        // ============================================================
-
         public GenericResponse GetAccessRequestApprovals(int userId)
         {
             try
@@ -878,22 +869,44 @@ namespace AccessControl.Processor
         }
 
         public async Task<GenericResponse> UpdateAccessRequestApproval(
+            int id,
             int accessRequestId,
             int approverUserId,
+            int? workerId,
+            int? roomId,
             string status,
-            string? comment)
+            string? comment,
+            string? reason,
+            string? workType,
+            string? description,
+            DateTime? approvedAt,
+            DateTime? rejectedAt)
         {
             try
             {
                 _db.UpdateAccessRequestApproval(
-                    accessRequestId,
+                    id,
                     status,
                     comment);
 
+                _db.UpdateAccessRequest(
+                            accessRequestId,
+                            workerId,
+                            roomId,
+                            status,
+                            reason,
+                            workType,
+                            description,
+                            status == "Approved" ? DateTime.Now : approvedAt,
+                            status == "rejected" ? DateTime.Now : rejectedAt,
+                            null,
+                            null,
+                            null,
+                            null);
                 DataRow dr = _db.GetRoomByAccessRequestId(accessRequestId);
                 TwilioHelper twilio = new();
 
-                await twilio.StatusUpdateAsync(status, dr.Field<string>("PhoneNumber")!.ToString(), dr.Field<string>("Name")!.ToString(), comment);
+               await twilio.StatusUpdateAsync(status.ToLower(), dr.Field<string>("PhoneNumber")!.ToString(), dr.Field<string>("Name")!.ToString(), comment);
                 return CreateSuccessResponseNoData();
             }
             catch (Exception ex)
@@ -907,12 +920,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-
-        // ============================================================
-        // ACCESS PHOTOS
-        // ============================================================
-
         public GenericResponse GetAccessPhotos(int userId)
         {
             try

@@ -3,6 +3,7 @@ using AccessControl.Security;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Twilio.Http;
 using static AccessControl.Helpers.ApiHelper;
 using static AccessControl.Model.ApiRequests;
 using static AccessControl.Model.ApiResponses;
@@ -715,11 +716,6 @@ namespace AccessControl.Controllers
                 Newtonsoft.Json.Formatting.Indented);
         }
 
-
-        // ============================================================
-        // ACCESS REQUEST APPROVALS
-        // ============================================================
-
         [HttpPost("getaccessrequestapprovals")]
         public string GetAccessRequestApprovals(
             TokenOnlyRequest req)
@@ -779,33 +775,33 @@ namespace AccessControl.Controllers
             UpdateAccessRequestApprovalRequest req)
         {
             int accountId = _security.CheckToken(req.Token);
-
             if (accountId < 1)
             {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
+                return JsonConvert.SerializeObject(new GenericResponse
+                {
+                    Result = false,
+                    ErrorMessage = TOKEN_ERROR
+                });
             }
 
-           GenericResponse ret =
-           await   _proc.UpdateAccessRequestApproval(
-                    req.AccessRequestId,
-                    (int)accountId,
-                    req.Status,
-                    req.Comment);
+            int approvalId = req.Id != 0 ? req.Id : req.AccessRequestApprovalId;
 
-            return JsonConvert.SerializeObject(
-                ret,
-                Newtonsoft.Json.Formatting.Indented);
+            GenericResponse ret = await _proc.UpdateAccessRequestApproval(
+                approvalId,
+                req.AccessRequestId,
+                req.ApproverUserId != 0 ? req.ApproverUserId : accountId,
+                req.WorkerId,
+                req.RoomId,
+                req.Status,
+                req.Comment,
+                req.Reason,
+                req.WorkType,
+                req.Description,
+                req.ApprovedAt,
+                req.RejectedAt);
+
+            return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
         }
-
-
-        // ============================================================
-        // ACCESS PHOTOS
-        // ============================================================
 
         [HttpPost("getaccessphotos")]
         public string GetAccessPhotos(TokenOnlyRequest req)

@@ -244,6 +244,7 @@
         public struct InsertAccessRequestApprovalRequest
         {
             public string Token { get; set; }
+            public int id { get; set; }
             public int AccessRequestId { get; set; }
             public int ApproverUserId { get; set; }
             public string status { get;set; }
@@ -254,16 +255,24 @@
         {
             public string Token { get; set; }
             public int Id { get; set; }
+            public int AccessRequestApprovalId { get; set; }
+
             public int AccessRequestId { get; set; }
             public int ApproverUserId { get; set; }
+
+            public int? WorkerId { get; set; }
+            public int? RoomId { get; set; }
+
             public string Status { get; set; }
-            public string Comment { get; set; }
+            public string? Comment { get; set; }
+            public string? Reason { get; set; }
+            public string? WorkType { get; set; }
+            public string? Description { get; set; }
+
+            public DateTime? ReviewedAt { get; set; }
+            public DateTime? ApprovedAt { get; set; }
+            public DateTime? RejectedAt { get; set; }
         }
-
-
-        // ============================================================
-        // ACCESS PHOTOS
-        // ============================================================
 
         public struct InsertAccessPhotoRequest
         {

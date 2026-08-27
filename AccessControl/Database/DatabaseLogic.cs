@@ -1,7 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
 using Twilio.Rest.Voice.V1;
-using Twilio.TwiML.Voice;
 using static AccessControl.Model.Model;
 
 namespace AccessControl.Database
@@ -193,10 +192,6 @@ namespace AccessControl.Database
         }
 
 
-        // ============================================================
-        // USERS
-        // ============================================================
-
         public DataTable GetUsers()
         {
             List<SqlParameter> sqlParams = new();
@@ -305,10 +300,6 @@ namespace AccessControl.Database
         }
 
 
-        // ============================================================
-        // WORK AREA MANAGERS
-        // ============================================================
-
         public DataTable GetWorkAreaManagers()
         {
             List<SqlParameter> sqlParams = new();
@@ -376,16 +367,15 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-
-        // ============================================================
-        // WORKERS
-        // ============================================================
-
         public DataTable GetWorkers(int? id)
         {
             List<SqlParameter> sqlParams = new();
+            if (id > 0)
+            {
+
             sqlParams.Add(
-                _conn.GenerateInputInteger("@Id", id ?? 0));
+                _conn.GenerateInputInteger("@Id", id.Value ));
+            }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "WorkersGet",
@@ -490,17 +480,17 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        // ============================================================
-        // ROOMS
-        // ============================================================
 
         public DataTable GetRooms(int? id)
         {
             List<SqlParameter> sqlParams = new();
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@Id",
-                    id ?? 0));
+            if(id > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger(
+                        "@Id",
+                        id ?? 0));
+            }
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "RoomsGet",
                 sqlParams.ToArray());
@@ -740,11 +730,11 @@ namespace AccessControl.Database
 
         public void UpdateAccessRequest(
             int id,
-            int workerId,
-            int roomId,
-            string status,
-            string reason,
-            string workType,
+            int? workerId,
+            int? roomId,
+            string? status,
+            string? reason,
+            string? workType,
             string? description,
             DateTime? approvedAt,
             DateTime? rejectedAt,
@@ -758,22 +748,22 @@ namespace AccessControl.Database
             sqlParams.Add(
                 _conn.GenerateInputInteger("@Id", id));
 
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@WorkerId",
-                    workerId));
+            if (workerId.HasValue)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@WorkerId", workerId.Value));
+            }
 
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@RoomId",
-                    roomId));
+            if (roomId.HasValue)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@RoomId", roomId.Value));
+            }
 
             sqlParams.Add(
                 _conn.GenerateInputString(
                     "@Status",
                     status,
                     50));
-
+            
             sqlParams.Add(
                 _conn.GenerateInputString(
                     "@Reason",
@@ -846,10 +836,6 @@ namespace AccessControl.Database
         }
 
 
-        // ============================================================
-        // ACCESS REQUEST APPROVALS
-        // ============================================================
-
         public DataTable GetAccessRequestApprovals()
         {
             List<SqlParameter> sqlParams = new();
@@ -894,7 +880,7 @@ namespace AccessControl.Database
         }
 
         public void UpdateAccessRequestApproval(
-            int accessRequestId,
+            int id,
             string status,
             string? comment)
         {
@@ -904,7 +890,7 @@ namespace AccessControl.Database
             sqlParams.Add(
                 _conn.GenerateInputInteger(
                     "@Id",
-                    accessRequestId));
+                    id));
 
 
             sqlParams.Add(
@@ -923,11 +909,6 @@ namespace AccessControl.Database
                 "AccessRequestApprovalsUpdate",
                 sqlParams.ToArray());
         }
-
-
-        // ============================================================
-        // ACCESS PHOTOS
-        // ============================================================
 
         public DataTable GetAccessPhotos()
         {
@@ -1325,10 +1306,6 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-
-        // ============================================================
-        // AUDIT EVENTS
-        // ============================================================
 
         public DataTable GetAuditEvents()
         {
