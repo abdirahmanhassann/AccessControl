@@ -369,5 +369,77 @@
             public string EventType { get; set; }
             public string Description { get; set; }
         }
+
+        public struct InsertDepartmentRequest
+        {
+            public string Token { get; set; }
+            public int SiteId { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+        }
+
+        public struct UpdateDepartmentRequest
+        {
+            public string Token { get; set; }
+            public int Id { get; set; }
+            public int SiteId { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public bool IsActive { get; set; }
+        }
+
+        public struct DepartmentIdRequest
+        {
+            public string Token { get; set; }
+            public int? Id { get; set; }
+            public int? DepartmentId { get; set; }
+            public int? RoomId { get; set; }
+            public int? WorkerId { get; set; }
+            public int? UserId { get; set; }
+            public int? SiteId { get; set; }
+        }
+
+        public struct InsertDepartmentRoomMappingRequest
+        {
+            public string Token { get; set; }
+            public int DepartmentId { get; set; }
+            public int RoomId { get; set; }
+        }
+
+        public struct InsertDepartmentWorkerMappingRequest
+        {
+            public string Token { get; set; }
+            public int DepartmentId { get; set; }
+            public int WorkerId { get; set; }
+        }
+
+        public struct InsertDepartmentManagerMappingRequest
+        {
+            public string Token { get; set; }
+            public int DepartmentId { get; set; }
+            public int UserId { get; set; }
+            public bool IsPrimary { get; set; }
+        }
+
+        public struct UpdateDepartmentManagerMappingRequest
+        {
+            public string Token { get; set; }
+            public int Id { get; set; }
+            public int DepartmentId { get; set; }
+            public int UserId { get; set; }
+            public bool IsPrimary { get; set; }
+        }
+
+        public struct InsertWorkerSiteMappingRequest
+        {
+            public string Token { get; set; }
+            public int WorkerId { get; set; }
+            public int SiteId { get; set; }
+        }
+
+        public struct ManagersForRoomRequest
+        {
+            public int RoomId { get; set; }
+        }
     }
 }
