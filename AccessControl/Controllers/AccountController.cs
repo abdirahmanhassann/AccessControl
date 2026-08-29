@@ -49,9 +49,6 @@ namespace AccessControl.Controllers
         }
 
 
-        // ============================================================
-        // SITES
-        // ============================================================
 
         [HttpPost("getsites")]
         public string GetSites(TokenOnlyRequest req)
@@ -132,9 +129,6 @@ namespace AccessControl.Controllers
         }
 
 
-        // ============================================================
-        // WORK AREAS
-        // ============================================================
 
         [HttpPost("getworkareas")]
         public string GetWorkAreas(TokenOnlyRequest req)
@@ -1076,9 +1070,6 @@ namespace AccessControl.Controllers
         }
 
 
-        // ============================================================
-        // AUDIT EVENTS
-        // ============================================================
 
         [HttpPost("getauditevents")]
         public string GetAuditEvents(
@@ -1127,9 +1118,8 @@ namespace AccessControl.Controllers
                 req.WorkerId,
                 req.UserId,
                 req.EventType,
-                req.Description,
-                req.IpAddress,
-                req.Metadata);
+                req.Description
+                );
 
             return JsonConvert.SerializeObject(
                 ret,

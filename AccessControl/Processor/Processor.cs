@@ -1258,9 +1258,8 @@ namespace AccessControl.Processor
             int? workerId,
             int? eventUserId,
             string eventType,
-            string? description,
-            string? ipAddress,
-            string? metadata)
+            string? description
+            )
         {
             try
             {
@@ -1269,9 +1268,8 @@ namespace AccessControl.Processor
                     workerId,
                     eventUserId,
                     eventType,
-                    description,
-                    ipAddress,
-                    metadata);
+                    description
+                    );
 
                 return CreateSuccessResponseNoData();
             }
