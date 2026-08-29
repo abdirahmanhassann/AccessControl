@@ -5,7 +5,7 @@ using static AccessControl.Model.Model;
 
 namespace AccessControl.Database
 {
-    public partial class DatabaseLogic
+    public class DatabaseLogic
     {
         private DatabaseConnectivity _conn;
 
@@ -1366,6 +1366,351 @@ namespace AccessControl.Database
             _conn.ExecuteStoredProcedureNoReturn(
                 "AuditEventsInsert",
                 sqlParams.ToArray());
+        }
+
+        public DataTable GetDepartments()
+        {
+            List<SqlParameter> sqlParams = new();
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "DepartmentsGet",
+                sqlParams.ToArray());
+        }
+
+        public void InsertDepartment(
+            int siteId,
+            string name,
+            string? description)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@SiteId",
+                    siteId));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@Name",
+                    name,
+                    200));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@Description",
+                    description,
+                    500));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentsInsert",
+                sqlParams.ToArray());
+        }
+
+        public void UpdateDepartment(
+            int id,
+            int siteId,
+            string name,
+            string? description,
+            bool isActive)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Id", id));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@SiteId",
+                    siteId));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@Name",
+                    name,
+                    200));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@Description",
+                    description,
+                    500));
+
+            sqlParams.Add(
+                _conn.GenerateInputBool(
+                    "@IsActive",
+                    isActive));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentsUpdate",
+                sqlParams.ToArray());
+        }
+
+        public DataTable GetDepartmentRoomMappings()
+        {
+            List<SqlParameter> sqlParams = new();
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "DepartmentRoomMappingGet",
+                sqlParams.ToArray());
+        }
+
+        public void InsertDepartmentRoomMapping(
+            int departmentId,
+            int roomId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@DepartmentId",
+                    departmentId));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@RoomId",
+                    roomId));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentRoomMappingInsert",
+                sqlParams.ToArray());
+        }
+
+        public void DeleteDepartmentRoomMapping(int id)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Id", id));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentRoomMappingDelete",
+                sqlParams.ToArray());
+        }
+
+        public DataTable GetDepartmentWorkerMappings()
+        {
+            List<SqlParameter> sqlParams = new();
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "DepartmentWorkerMappingGet",
+                sqlParams.ToArray());
+        }
+
+        public void InsertDepartmentWorkerMapping(
+            int departmentId,
+            int workerId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@DepartmentId",
+                    departmentId));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@WorkerId",
+                    workerId));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentWorkerMappingInsert",
+                sqlParams.ToArray());
+        }
+
+        public void DeleteDepartmentWorkerMapping(int id)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Id", id));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentWorkerMappingDelete",
+                sqlParams.ToArray());
+        }
+
+        public DataTable GetDepartmentManagerMappings()
+        {
+            List<SqlParameter> sqlParams = new();
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "DepartmentManagerMappingGet",
+                sqlParams.ToArray());
+        }
+
+        public void InsertDepartmentManagerMapping(
+            int departmentId,
+            int userId,
+            bool isPrimary)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@DepartmentId",
+                    departmentId));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@UserId",
+                    userId));
+
+            sqlParams.Add(
+                _conn.GenerateInputBool(
+                    "@IsPrimary",
+                    isPrimary));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentManagerMappingInsert",
+                sqlParams.ToArray());
+        }
+
+        public void UpdateDepartmentManagerMapping(
+            int id,
+            int departmentId,
+            int userId,
+            bool isPrimary)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Id", id));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@DepartmentId",
+                    departmentId));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@UserId",
+                    userId));
+
+            sqlParams.Add(
+                _conn.GenerateInputBool(
+                    "@IsPrimary",
+                    isPrimary));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentManagerMappingUpdate",
+                sqlParams.ToArray());
+        }
+
+        public void DeleteDepartmentManagerMapping(int id)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Id", id));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "DepartmentManagerMappingDelete",
+                sqlParams.ToArray());
+        }
+
+        public DataTable GetWorkerSiteMappings()
+        {
+            List<SqlParameter> sqlParams = new();
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "WorkerSiteMappingGet",
+                sqlParams.ToArray());
+        }
+
+        public void InsertWorkerSiteMapping(
+            int workerId,
+            int siteId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@WorkerId",
+                    workerId));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@SiteId",
+                    siteId));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "WorkerSiteMappingInsert",
+                sqlParams.ToArray());
+        }
+
+        public void DeleteWorkerSiteMapping(int id)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Id", id));
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "WorkerSiteMappingDelete",
+                sqlParams.ToArray());
+        }
+
+        public DataTable GetManagersForRoom(int roomId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@RoomId",
+                    roomId));
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "ManagersForRoomGet",
+                sqlParams.ToArray());
+        }
+
+        public bool WorkerCanAccessRoom(int workerId, int roomId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@WorkerId",
+                    workerId));
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@RoomId",
+                    roomId));
+
+            return _conn.ExecuteStoredProcedureAsScalarInt(
+                "WorkerCanAccessRoom",
+                sqlParams.ToArray()) == 1;
+        }
+
+        public bool ManagerCanApprove(int approverUserId, int? roomId, int? accessRequestId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@ApproverUserId",
+                    approverUserId));
+
+            if (roomId.HasValue)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger(
+                        "@RoomId",
+                        roomId.Value));
+            }
+
+            if (accessRequestId.HasValue)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger(
+                        "@AccessRequestId",
+                        accessRequestId.Value));
+            }
+
+            return _conn.ExecuteStoredProcedureAsScalarInt(
+                "ManagerCanApprove",
+                sqlParams.ToArray()) == 1;
         }
     }
 }
