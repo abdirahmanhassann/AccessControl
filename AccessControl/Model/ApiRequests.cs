@@ -440,6 +440,7 @@
         public struct ManagersForRoomRequest
         {
             public int RoomId { get; set; }
+            public int DepartmentId { get; set; }
         }
     }
 }

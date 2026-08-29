@@ -1748,11 +1748,11 @@ namespace AccessControl.Processor
             }
         }
 
-        public GenericResponse GetManagersForRoom(int roomId)
+        public GenericResponse GetManagersForRoom(int roomId, int departmentId)
         {
             try
             {
-                DataTable dt = _db.GetManagersForRoom(roomId);
+                DataTable dt = _db.GetManagersForRoom(roomId, departmentId);
 
                 return CreateSuccessResponseWithData(dt);
             }
