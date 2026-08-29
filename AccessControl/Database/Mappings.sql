@@ -469,3 +469,27 @@ BEGIN
     ) THEN 1 ELSE 0 END AS INT) AS [Allowed];
 END
 GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentsForRoomGet]
+    @RoomId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT DISTINCT
+        d.[Id],
+        d.[SiteId],
+        s.[Name] AS [SiteName],
+        d.[Name],
+        d.[Description],
+        d.[IsActive],
+        d.[CreatedAt]
+    FROM [dbo].[DepartmentRoomMapping] drm
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = drm.[DepartmentId] AND d.[IsActive] = 1
+    INNER JOIN [dbo].[Rooms] r ON r.[Id] = drm.[RoomId]
+    INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
+    INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    WHERE drm.[RoomId] = @RoomId
+      AND d.[SiteId] = wa.[SiteId]
+    ORDER BY d.[Name];
+END
+GO

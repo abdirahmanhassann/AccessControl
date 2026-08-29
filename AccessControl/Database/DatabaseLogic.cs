@@ -1664,6 +1664,20 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
+        public DataTable GetDepartmentsForRoom(int roomId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger(
+                    "@RoomId",
+                    roomId));
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "DepartmentsForRoomGet",
+                sqlParams.ToArray());
+        }
+
         public bool WorkerCanAccessRoom(int workerId, int roomId)
         {
             List<SqlParameter> sqlParams = new();

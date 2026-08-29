@@ -1767,5 +1767,23 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-    }
-}
+
+        public GenericResponse GetDepartmentsForRoom(int roomId)
+        {
+            try
+            {
+                DataTable dt = _db.GetDepartmentsForRoom(roomId);
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
