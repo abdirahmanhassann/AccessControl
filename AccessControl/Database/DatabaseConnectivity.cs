@@ -41,12 +41,11 @@ namespace AccessControl.Database
         }
 
 
-        public SqlParameter GenerateInputString(string paramName, string val, int length = 2000)
+        public SqlParameter GenerateInputString(string paramName, string? val, int length = 2000)
         {
             return new SqlParameter(paramName, SqlDbType.NVarChar, length)
             {
-                
-                Value = val
+                Value = string.IsNullOrEmpty(val) ? DBNull.Value : val
             };
         }
         public SqlParameter GenerateInputVarBinary(string paramName, byte val, int length = 2000)
