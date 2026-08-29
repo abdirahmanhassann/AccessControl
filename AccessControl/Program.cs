@@ -1,5 +1,22 @@
 var builder = WebApplication.CreateBuilder(args);
 
+foreach (var key in new[]
+{
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+    "TWILIO_FROM_NUMBER",
+    "TWILIO_TO_NUMBER",
+    "TWILIO_VERIFY_SERVICE_SID"
+})
+{
+    var value = builder.Configuration[key];
+    if (!string.IsNullOrWhiteSpace(value) &&
+        string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(key)))
+    {
+        Environment.SetEnvironmentVariable(key, value);
+    }
+}
+
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
