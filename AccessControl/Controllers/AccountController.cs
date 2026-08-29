@@ -216,19 +216,13 @@ namespace AccessControl.Controllers
         [HttpPost("getusers")]
         public string GetUsers(TokenOnlyRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
-
-            if (accountId < 1)
+            int accountId = 0;
+            if (!string.IsNullOrWhiteSpace(req.Token))
             {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
+                accountId = _security.CheckToken(req.Token);
             }
 
-            GenericResponse ret = _proc.GetUsers((int)accountId);
+            GenericResponse ret = _proc.GetUsers(accountId);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -661,11 +655,12 @@ namespace AccessControl.Controllers
         {
             GenericResponse ret = await _proc.InsertAccessRequest(
                 req.PhoneNumber,
-                req.workerId,
+                req.WorkerId,
                 req.RoomId,
                 req.Reason,
                 req.WorkType,
-                req.Description);
+                req.Description,
+                req.ApproverUserId);
 
             return JsonConvert.SerializeObject(
                 ret,
