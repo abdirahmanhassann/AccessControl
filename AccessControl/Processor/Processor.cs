@@ -468,13 +468,30 @@ namespace AccessControl.Processor
         {
             try
             {
-              int workerId =  _db.InsertWorker(
-                    firstName,
-                    lastName,
-                    phoneNumber,
+                if (string.IsNullOrWhiteSpace(phoneNumber))
+                {
+                    return CreateFailureResponse("Phone number is required.");
+                }
+
+                DataTable existing = _db.GetWorkers(null, phoneNumber);
+                if (existing.Rows.Count > 0)
+                {
+                    return CreateSuccessResponseWithData(existing);
+                }
+
+                if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+                {
+                    return CreateFailureResponse("First name and last name are required for a new worker.");
+                }
+
+                int workerId = _db.InsertWorker(
+                    firstName.Trim(),
+                    lastName.Trim(),
+                    phoneNumber.Trim(),
                     companyName);
 
-                return CreateSuccessResponseWithData(workerId);
+                DataTable created = _db.GetWorkers(workerId);
+                return CreateSuccessResponseWithData(created);
             }
             catch (Exception ex)
             {
@@ -1123,11 +1140,27 @@ namespace AccessControl.Processor
             try
             {
                 DataRow dr = _db.VerifyOTP(code);
-                if (dr.Field<int>("value")! == 1)
+                if (dr == null || dr.Field<int>("value") != 1)
                 {
-                return CreateSuccessResponseWithData(dr);
+                    return CreateFailureResponse("Wrong Code provided");
                 }
-                 return CreateFailureResponse("Wrong Code provided");
+
+                string? phone = null;
+                if (dr.Table.Columns.Contains("PhoneNumber"))
+                {
+                    phone = dr.Field<string>("PhoneNumber");
+                }
+
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    DataTable workers = _db.GetWorkers(null, phone);
+                    if (workers.Rows.Count > 0)
+                    {
+                        return CreateSuccessResponseWithData(workers);
+                    }
+                }
+
+                return CreateSuccessResponseWithData(dr);
             }
             catch (Exception ex)
             {

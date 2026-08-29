@@ -343,8 +343,34 @@ CREATE OR ALTER PROCEDURE [dbo].[ManagersForRoomGet]
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF @DepartmentId IS NOT NULL AND @DepartmentId > 0
+    BEGIN
+        SELECT DISTINCT
+            u.[Id],
+            u.[Id] AS [UserId],
+            u.[FirstName],
+            u.[LastName],
+            u.[Email],
+            u.[PhoneNumber],
+            u.[Role],
+            u.[IsActive],
+            d.[Id] AS [DepartmentId],
+            d.[Name] AS [DepartmentName],
+            d.[SiteId],
+            s.[Name] AS [SiteName]
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId]
+        LEFT JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+        WHERE dmm.[DepartmentId] = @DepartmentId
+        ORDER BY u.[LastName], u.[FirstName];
+        RETURN;
+    END
+
     SELECT DISTINCT
         u.[Id],
+        u.[Id] AS [UserId],
         u.[FirstName],
         u.[LastName],
         u.[Email],
@@ -353,18 +379,14 @@ BEGIN
         u.[IsActive],
         d.[Id] AS [DepartmentId],
         d.[Name] AS [DepartmentName],
-        s.[Id] AS [SiteId],
+        d.[SiteId],
         s.[Name] AS [SiteName]
-    FROM [dbo].[DepartmentRoomMapping] drm
-    INNER JOIN [dbo].[Departments] d ON d.[Id] = drm.[DepartmentId] AND d.[IsActive] = 1
-    INNER JOIN [dbo].[DepartmentManagerMapping] dmm ON dmm.[DepartmentId] = d.[Id]
-    INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId] AND u.[IsActive] = 1
-    INNER JOIN [dbo].[Rooms] r ON r.[Id] = drm.[RoomId]
-    INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
-    INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    FROM [dbo].[DepartmentManagerMapping] dmm
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+    INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId]
+    INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
+    LEFT JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
     WHERE drm.[RoomId] = @RoomId
-      AND d.[SiteId] = wa.[SiteId]
-      AND (@DepartmentId IS NULL OR d.[Id] = @DepartmentId)
     ORDER BY u.[LastName], u.[FirstName];
 END
 GO
@@ -385,9 +407,6 @@ BEGIN
         FROM [dbo].[DepartmentManagerMapping] dmm
         INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
         INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
-        INNER JOIN [dbo].[Rooms] r ON r.[Id] = drm.[RoomId]
-        INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId] AND wa.[SiteId] = d.[SiteId]
-        INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId] AND u.[IsActive] = 1
         WHERE dmm.[UserId] = @ApproverUserId
           AND drm.[RoomId] = @ResolvedRoomId
     ) THEN 1 ELSE 0 END AS INT) AS [Allowed];
@@ -413,7 +432,51 @@ BEGIN
     INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
     INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
     WHERE drm.[RoomId] = @RoomId
-      AND d.[SiteId] = wa.[SiteId]
     ORDER BY d.[Name];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[OTPVerify]
+    @Code INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT TOP 1 1
+        FROM [dbo].[OTPVerifications]
+        WHERE [CodeHash] = @Code
+          AND [VerifiedAt] IS NULL
+          AND GETDATE() < [ExpiresAt]
+    )
+    BEGIN
+        UPDATE [dbo].[OTPVerifications]
+        SET [VerifiedAt] = GETDATE()
+        WHERE [CodeHash] = @Code
+          AND [VerifiedAt] IS NULL
+          AND GETDATE() < [ExpiresAt];
+
+        SELECT TOP 1
+            1 AS [value],
+            o.[PhoneNumber],
+            o.[WorkerId],
+            w.[Id],
+            w.[FirstName],
+            w.[LastName],
+            w.[CompanyName],
+            w.[PhoneNumber] AS [WorkerPhoneNumber],
+            w.[IsActive],
+            w.[CreatedAt]
+        FROM [dbo].[OTPVerifications] o
+        LEFT JOIN [dbo].[Workers] w
+            ON w.[PhoneNumber] = o.[PhoneNumber]
+            OR (o.[WorkerId] IS NOT NULL AND w.[Id] = o.[WorkerId])
+        WHERE o.[CodeHash] = @Code
+        ORDER BY o.[Id] DESC;
+    END
+    ELSE
+    BEGIN
+        SELECT 0 AS [value];
+    END
 END
 GO

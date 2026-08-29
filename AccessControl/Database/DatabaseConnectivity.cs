@@ -45,7 +45,7 @@ namespace AccessControl.Database
         {
             return new SqlParameter(paramName, SqlDbType.NVarChar, length)
             {
-                Value = string.IsNullOrEmpty(val) ? DBNull.Value : val
+                Value = (object?)val ?? DBNull.Value
             };
         }
         public SqlParameter GenerateInputVarBinary(string paramName, byte val, int length = 2000)
