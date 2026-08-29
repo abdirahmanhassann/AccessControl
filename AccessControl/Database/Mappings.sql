@@ -397,7 +397,8 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE [dbo].[ManagersForRoomGet]
-    @RoomId INT
+    @RoomId INT,
+    @DepartmentId INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -422,6 +423,7 @@ BEGIN
     INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
     WHERE drm.[RoomId] = @RoomId
       AND d.[SiteId] = wa.[SiteId]
+      AND (@DepartmentId IS NULL OR d.[Id] = @DepartmentId)
     ORDER BY u.[LastName], u.[FirstName];
 END
 GO

@@ -1266,7 +1266,7 @@ namespace AccessControl.Controllers
         [HttpPost("getmanagersforroom")]
         public string GetManagersForRoom(ManagersForRoomRequest req)
         {
-            return JsonConvert.SerializeObject(_proc.GetManagersForRoom(req.RoomId), Newtonsoft.Json.Formatting.Indented);
+            return JsonConvert.SerializeObject(_proc.GetManagersForRoom(req.RoomId, req.DepartmentId), Newtonsoft.Json.Formatting.Indented);
         }
 
         [HttpPost("getdepartmentsforroom")]

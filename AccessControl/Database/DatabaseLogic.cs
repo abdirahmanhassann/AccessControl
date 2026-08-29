@@ -1650,7 +1650,7 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public DataTable GetManagersForRoom(int roomId)
+        public DataTable GetManagersForRoom(int roomId, int departmentId)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -1658,6 +1658,14 @@ namespace AccessControl.Database
                 _conn.GenerateInputInteger(
                     "@RoomId",
                     roomId));
+
+            if (departmentId > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger(
+                        "@DepartmentId",
+                        departmentId));
+            }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "ManagersForRoomGet",
