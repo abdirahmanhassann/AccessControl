@@ -367,14 +367,21 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public DataTable GetWorkers(int? id)
+        public DataTable GetWorkers(int? id, string? phoneNumber = null)
         {
             List<SqlParameter> sqlParams = new();
             if (id > 0)
             {
-
-            sqlParams.Add(
-                _conn.GenerateInputInteger("@Id", id.Value ));
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@Id", id.Value));
+            }
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputString(
+                        "@PhoneNumber",
+                        phoneNumber,
+                        30));
             }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
