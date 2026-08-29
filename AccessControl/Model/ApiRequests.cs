@@ -359,9 +359,6 @@
         }
 
 
-        // ============================================================
-        // AUDIT EVENTS
-        // ============================================================
 
         public struct InsertAuditEventRequest
         {
@@ -371,8 +368,6 @@
             public int? UserId { get; set; }
             public string EventType { get; set; }
             public string Description { get; set; }
-            public string IpAddress { get; set; }
-            public string Metadata { get; set; }
         }
     }
 }

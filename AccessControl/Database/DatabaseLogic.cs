@@ -1321,9 +1321,8 @@ namespace AccessControl.Database
             int? workerId,
             int? userId,
             string eventType,
-            string? description,
-            string? ipAddress,
-            string? metadata)
+            string? description
+            )
         {
             List<SqlParameter> sqlParams = new();
 
@@ -1363,17 +1362,6 @@ namespace AccessControl.Database
                     description,
                     2000));
 
-            sqlParams.Add(
-                _conn.GenerateInputString(
-                    "@IpAddress",
-                    ipAddress,
-                    50));
-
-            sqlParams.Add(
-                _conn.GenerateInputString(
-                    "@Metadata",
-                    metadata,
-                    4000));
 
             _conn.ExecuteStoredProcedureNoReturn(
                 "AuditEventsInsert",

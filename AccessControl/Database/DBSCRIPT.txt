@@ -1,10 +1,10 @@
 USE [master]
 GO
-/****** Object:  Database [AccessControl]    Script Date: 25/08/2026 19:45:04 ******/
+/****** Object:  Database [AccessControl]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE DATABASE [AccessControl]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'AccessControl', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS01\MSSQL\DATA\AccessControl.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'AccessControl', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS01\MSSQL\DATA\AccessControl.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
 ( NAME = N'AccessControl_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS01\MSSQL\DATA\AccessControl_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
  WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
@@ -84,7 +84,7 @@ ALTER DATABASE [AccessControl] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLE
 GO
 USE [AccessControl]
 GO
-/****** Object:  Table [dbo].[AccessPhotos]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[AccessPhotos]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -106,7 +106,7 @@ CREATE TABLE [dbo].[AccessPhotos](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[AccessRequestApprovals]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[AccessRequestApprovals]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -124,7 +124,7 @@ CREATE TABLE [dbo].[AccessRequestApprovals](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[AccessRequests]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[AccessRequests]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -144,13 +144,14 @@ CREATE TABLE [dbo].[AccessRequests](
 	[ExpectedClockOutAt] [datetime2](0) NULL,
 	[ClockedOutAt] [datetime2](0) NULL,
 	[CompletedAt] [datetime2](0) NULL,
+	[CreatedAt] [datetime] NOT NULL,
  CONSTRAINT [PK_AccessRequests] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[AccessWindows]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[AccessWindows]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -168,7 +169,7 @@ CREATE TABLE [dbo].[AccessWindows](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[AuditEvents]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[AuditEvents]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -189,7 +190,7 @@ CREATE TABLE [dbo].[AuditEvents](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[ErrorLog]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[ErrorLog]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -202,7 +203,7 @@ CREATE TABLE [dbo].[ErrorLog](
 	[DateStamp] [datetime] NOT NULL
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Notifications]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[Notifications]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -225,7 +226,7 @@ CREATE TABLE [dbo].[Notifications](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[OTPVerifications]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[OTPVerifications]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -245,7 +246,7 @@ CREATE TABLE [dbo].[OTPVerifications](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Rooms]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[Rooms]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -274,7 +275,7 @@ CREATE TABLE [dbo].[Rooms](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Sites]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[Sites]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -296,7 +297,7 @@ CREATE TABLE [dbo].[Sites](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Token]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[Token]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -308,7 +309,7 @@ CREATE TABLE [dbo].[Token](
 	[ValidTo] [datetime] NOT NULL
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Users]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[Users]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -336,7 +337,7 @@ CREATE TABLE [dbo].[Users](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[WorkAreaManagers]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[WorkAreaManagers]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -358,7 +359,7 @@ CREATE TABLE [dbo].[WorkAreaManagers](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[WorkAreas]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[WorkAreas]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -381,7 +382,7 @@ CREATE TABLE [dbo].[WorkAreas](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Workers]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Table [dbo].[Workers]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -401,19 +402,19 @@ CREATE TABLE [dbo].[Workers](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_AccessPhotos_Request]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_AccessPhotos_Request]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessPhotos_Request] ON [dbo].[AccessPhotos]
 (
 	[AccessRequestId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_AccessRequestApprovals_Request]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_AccessRequestApprovals_Request]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequestApprovals_Request] ON [dbo].[AccessRequestApprovals]
 (
 	[AccessRequestId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_AccessRequests_Active]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_AccessRequests_Active]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_Active] ON [dbo].[AccessRequests]
 (
 	[ExpectedClockOutAt] ASC
@@ -421,7 +422,7 @@ CREATE NONCLUSTERED INDEX [IX_AccessRequests_Active] ON [dbo].[AccessRequests]
 WHERE ([ClockedInAt] IS NOT NULL AND [ClockedOutAt] IS NULL)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_AccessRequests_RoomId]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_AccessRequests_RoomId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_RoomId] ON [dbo].[AccessRequests]
 (
 	[RoomId] ASC
@@ -429,44 +430,44 @@ CREATE NONCLUSTERED INDEX [IX_AccessRequests_RoomId] ON [dbo].[AccessRequests]
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_AccessRequests_Status]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_AccessRequests_Status]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_Status] ON [dbo].[AccessRequests]
 (
 	[Status] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_AccessRequests_WorkerId]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_AccessRequests_WorkerId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_WorkerId] ON [dbo].[AccessRequests]
 (
 	[WorkerId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_AuditEvents_Request]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_AuditEvents_Request]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AuditEvents_Request] ON [dbo].[AuditEvents]
 (
 	[AccessRequestId] ASC,
 	[CreatedAt] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_Rooms_WorkAreaId]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_Rooms_WorkAreaId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_Rooms_WorkAreaId] ON [dbo].[Rooms]
 (
 	[WorkAreaId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_WorkAreaManagers_UserId]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_WorkAreaManagers_UserId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_WorkAreaManagers_UserId] ON [dbo].[WorkAreaManagers]
 (
 	[UserId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_WorkAreaManagers_WorkAreaId]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_WorkAreaManagers_WorkAreaId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_WorkAreaManagers_WorkAreaId] ON [dbo].[WorkAreaManagers]
 (
 	[WorkAreaId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_WorkAreas_SiteId]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  Index [IX_WorkAreas_SiteId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_WorkAreas_SiteId] ON [dbo].[WorkAreas]
 (
 	[SiteId] ASC
@@ -631,7 +632,7 @@ ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CK_Users_Role] CHECK  (([
 GO
 ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CK_Users_Role]
 GO
-/****** Object:  StoredProcedure [dbo].[AccessPhotosGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessPhotosGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -661,7 +662,7 @@ BEGIN
     ORDER BY ap.[UploadedAt];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessPhotosInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessPhotosInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -707,7 +708,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessPhotosUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessPhotosUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -739,13 +740,13 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE   PROCEDURE [dbo].[AccessRequestApprovalsGet]
+CREATE PROCEDURE [dbo].[AccessRequestApprovalsGet]
     @Id INT = NULL,
     @AccessRequestId INT = NULL,
     @ApproverUserId INT = NULL
@@ -757,22 +758,30 @@ BEGIN
         ara.[Id],
         ara.[AccessRequestId],
         ara.[ApproverUserId],
-        u.[FirstName],
-        u.[LastName],
-        u.[Email],
+        u.[FirstName] as [ApproverFirstName],
+        u.[LastName] as [ApproverLastName],
+        u.[Email] as [ApproverEmail],
+        w.[FirstName] as [WorkerFirstName],
+        w.[LastName] as [WorkerLastName],
+        w.[PhoneNumber] as [WorkerPhoneNumber],
         ara.[Status],
         ara.[Comment],
-        ara.[ReviewedAt]
+        ara.[ReviewedAt],
+        ar.[CreatedAt] as [AccessrequestCreatedAt]
     FROM [dbo].[AccessRequestApprovals] ara
     INNER JOIN [dbo].[Users] u
         ON u.[Id] = ara.[ApproverUserId]
+    INNER JOIN [dbo].[AccessRequests] ar
+        ON ar.id = ara.AccessRequestId
+    INNER JOIN [dbo].[Workers] w 
+        ON w.id = ar.WorkerId
     WHERE (@Id IS NULL OR ara.[Id] = @Id)
       AND (@AccessRequestId IS NULL OR ara.[AccessRequestId] = @AccessRequestId)
       AND (@ApproverUserId IS NULL OR ara.[ApproverUserId] = @ApproverUserId)
-    ORDER BY ara.[ReviewedAt] DESC;
+    ORDER BY ar.[CreatedAt] DESC;
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -802,7 +811,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -812,8 +821,7 @@ GO
 CREATE   PROCEDURE [dbo].[AccessRequestApprovalsUpdate]
     @Id INT,
     @Status NVARCHAR(30),
-    @Comment NVARCHAR(1000) = NULL,
-    @ReviewedAt DATETIME2(0) = NULL
+    @Comment NVARCHAR(1000) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -822,13 +830,13 @@ BEGIN
     SET
         [Status] = @Status,
         [Comment] = @Comment,
-        [ReviewedAt] = @ReviewedAt
+         ReviewedAt = GETDATE()
     WHERE [Id] = @Id;
 
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessRequestsGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessRequestsGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -890,7 +898,7 @@ BEGIN
     ORDER BY ar.[RequestedAt] DESC;
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessRequestsInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessRequestsInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -914,7 +922,8 @@ BEGIN
         [RoomId],
         [Reason],
         [WorkType],
-        [Description]
+        [Description],
+        [CreatedAt]
     )
     VALUES
     (
@@ -922,13 +931,14 @@ BEGIN
         @RoomId,
         @Reason,
         @WorkType,
-        @Description
+        @Description,
+        GETDATE()
     );
 
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessRequestsUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessRequestsUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -968,7 +978,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessWindowsGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessWindowsGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -997,7 +1007,7 @@ BEGIN
     ORDER BY aw.[WorkAreaId], aw.[DayOfWeek], aw.[StartTime];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessWindowsInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessWindowsInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1031,7 +1041,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AccessWindowsUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AccessWindowsUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1061,7 +1071,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AddAccessToken]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AddAccessToken]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1078,7 +1088,7 @@ BEGIN
 	UPDATE Users SET LastLoginAt = GETDATE() WHERE Id = @AccountId
 END
 GO
-/****** Object:  StoredProcedure [dbo].[AuditEventsGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AuditEventsGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1116,7 +1126,7 @@ BEGIN
     ORDER BY [CreatedAt] DESC;
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[AuditEventsInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[AuditEventsInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1159,7 +1169,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[CheckToken]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[CheckToken]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1174,7 +1184,7 @@ BEGIN
 	SELECT ISNULL(AccountId, 0) FROM Token WHERE Token = @Token AND ValidTo > GETDATE()
 END
 GO
-/****** Object:  StoredProcedure [dbo].[CreateUser]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[CreateUser]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1223,7 +1233,7 @@ BEGIN
 	)
 END
 GO
-/****** Object:  StoredProcedure [dbo].[ExtendAccessToken]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[ExtendAccessToken]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1238,7 +1248,7 @@ BEGIN
 	UPDATE Token SET ValidTo = DATEADD(mi, 20, GETDATE()) WHERE Token = @Token
 END
 GO
-/****** Object:  StoredProcedure [dbo].[GetUserByEmail]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[GetUserByEmail]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1251,7 +1261,7 @@ BEGIN
 	SELECT TOP 1 * FROM Users WHERE LOWER(Email) = LOWER(@Email)
 END
 GO
-/****** Object:  StoredProcedure [dbo].[LogError]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[LogError]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1268,7 +1278,7 @@ BEGIN
 	INSERT INTO ErrorLog VALUES (@SourceLocation, @ErrorMessage, @AccountId, GETDATE())
 END
 GO
-/****** Object:  StoredProcedure [dbo].[NotificationsGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[NotificationsGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1305,7 +1315,7 @@ BEGIN
     ORDER BY [CreatedAt] DESC;
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[NotificationsInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[NotificationsInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1345,7 +1355,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[NotificationsUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[NotificationsUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1371,7 +1381,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[OTPVerificationsGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[OTPVerificationsGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1399,7 +1409,7 @@ BEGIN
     ORDER BY [CreatedAt] DESC;
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[OTPVerificationsInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[OTPVerificationsInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1434,7 +1444,7 @@ END;
 
 
 GO
-/****** Object:  StoredProcedure [dbo].[OTPVerificationsUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[OTPVerificationsUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1458,7 +1468,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[OTPVerify]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[OTPVerify]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1483,7 +1493,7 @@ BEGIN
     END
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[RoomsGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[RoomsGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1519,7 +1529,7 @@ BEGIN
     ORDER BY r.[RoomNumber];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[RoomsGetByAccessRequestId]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[RoomsGetByAccessRequestId]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1553,7 +1563,7 @@ BEGIN
       AND r.IsActive = 1
 END
 GO
-/****** Object:  StoredProcedure [dbo].[RoomsGetByQrCode]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[RoomsGetByQrCode]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1594,7 +1604,7 @@ BEGIN
       AND s.IsActive = 1;
 END
 GO
-/****** Object:  StoredProcedure [dbo].[RoomsInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[RoomsInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1634,7 +1644,7 @@ BEGIN
     WHERE [Id] = @Id;
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[RoomsUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[RoomsUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1664,7 +1674,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[SitesGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[SitesGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1687,7 +1697,7 @@ BEGIN
     ORDER BY [Name];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[SitesInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[SitesInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1720,7 +1730,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[SitesUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[SitesUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1748,7 +1758,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[UsersGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[UsersGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1776,7 +1786,7 @@ BEGIN
     ORDER BY [LastName], [FirstName];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[UsersInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[UsersInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1813,7 +1823,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[UsersUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[UsersUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1845,7 +1855,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkAreaManagersGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkAreaManagersGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1881,7 +1891,7 @@ BEGIN
     ORDER BY wa.[Name], u.[LastName], u.[FirstName];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkAreaManagersInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkAreaManagersInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1912,7 +1922,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkAreaManagersUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkAreaManagersUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1938,7 +1948,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkAreasGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkAreasGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1967,7 +1977,7 @@ BEGIN
     ORDER BY wa.[Name];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkAreasInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkAreasInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1998,7 +2008,7 @@ BEGIN
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkAreasUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkAreasUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2026,7 +2036,7 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkersGet]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkersGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2054,7 +2064,7 @@ BEGIN
     ORDER BY [LastName], [FirstName];
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkersInsert]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkersInsert]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2096,7 +2106,7 @@ BEGIN
     end
 END;
 GO
-/****** Object:  StoredProcedure [dbo].[WorkersUpdate]    Script Date: 25/08/2026 19:45:05 ******/
+/****** Object:  StoredProcedure [dbo].[WorkersUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
