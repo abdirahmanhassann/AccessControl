@@ -1183,30 +1183,6 @@ namespace AccessControl.Controllers
             return JsonConvert.SerializeObject(_proc.DeleteDepartmentRoomMapping(accountId, req.Id), Newtonsoft.Json.Formatting.Indented);
         }
 
-        [HttpPost("getdepartmentworkermappings")]
-        public string GetDepartmentWorkerMappings(TokenOnlyRequest req)
-        {
-            string? err = Guard(req.Token, out int accountId);
-            if (err != null) return err;
-            return JsonConvert.SerializeObject(_proc.GetDepartmentWorkerMappings(accountId), Newtonsoft.Json.Formatting.Indented);
-        }
-
-        [HttpPost("insertdepartmentworkermapping")]
-        public string InsertDepartmentWorkerMapping(InsertDepartmentWorkerMappingRequest req)
-        {
-            string? err = Guard(req.Token, out int accountId);
-            if (err != null) return err;
-            return JsonConvert.SerializeObject(_proc.InsertDepartmentWorkerMapping(accountId, req.DepartmentId, req.WorkerId), Newtonsoft.Json.Formatting.Indented);
-        }
-
-        [HttpPost("deletedepartmentworkermapping")]
-        public string DeleteDepartmentWorkerMapping(IdOnlyRequest req)
-        {
-            string? err = Guard(req.Token, out int accountId);
-            if (err != null) return err;
-            return JsonConvert.SerializeObject(_proc.DeleteDepartmentWorkerMapping(accountId, req.Id), Newtonsoft.Json.Formatting.Indented);
-        }
-
         [HttpPost("getdepartmentmanagermappings")]
         public string GetDepartmentManagerMappings(TokenOnlyRequest req)
         {

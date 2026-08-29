@@ -5,6 +5,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+IF OBJECT_ID(N'[dbo].[DepartmentWorkerMappingGet]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[DepartmentWorkerMappingGet];
+IF OBJECT_ID(N'[dbo].[DepartmentWorkerMappingInsert]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[DepartmentWorkerMappingInsert];
+IF OBJECT_ID(N'[dbo].[DepartmentWorkerMappingDelete]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[DepartmentWorkerMappingDelete];
+IF OBJECT_ID(N'[dbo].[WorkerCanAccessRoom]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[WorkerCanAccessRoom];
+IF OBJECT_ID(N'[dbo].[DepartmentWorkerMapping]', N'U') IS NOT NULL
+    DROP TABLE [dbo].[DepartmentWorkerMapping];
+GO
+
 /* Departments are org units on a site. WorkAreas stay as physical zones.
    A manager may approve a room only if they are a DepartmentManager of a
    department that (a) maps to that room and (b) belongs to the room's site.
@@ -38,21 +50,6 @@ BEGIN
         CONSTRAINT [UQ_DepartmentRoomMapping] UNIQUE NONCLUSTERED ([DepartmentId] ASC, [RoomId] ASC),
         CONSTRAINT [FK_DepartmentRoomMapping_Departments] FOREIGN KEY ([DepartmentId]) REFERENCES [dbo].[Departments]([Id]),
         CONSTRAINT [FK_DepartmentRoomMapping_Rooms] FOREIGN KEY ([RoomId]) REFERENCES [dbo].[Rooms]([Id])
-    );
-END
-GO
-
-IF OBJECT_ID(N'[dbo].[DepartmentWorkerMapping]', N'U') IS NULL
-BEGIN
-    CREATE TABLE [dbo].[DepartmentWorkerMapping](
-        [Id] INT IDENTITY(1,1) NOT NULL,
-        [DepartmentId] INT NOT NULL,
-        [WorkerId] INT NOT NULL,
-        [CreatedAt] DATETIME2(0) NOT NULL CONSTRAINT [DF_DepartmentWorkerMapping_CreatedAt] DEFAULT (sysutcdatetime()),
-        CONSTRAINT [PK_DepartmentWorkerMapping] PRIMARY KEY CLUSTERED ([Id] ASC),
-        CONSTRAINT [UQ_DepartmentWorkerMapping] UNIQUE NONCLUSTERED ([DepartmentId] ASC, [WorkerId] ASC),
-        CONSTRAINT [FK_DepartmentWorkerMapping_Departments] FOREIGN KEY ([DepartmentId]) REFERENCES [dbo].[Departments]([Id]),
-        CONSTRAINT [FK_DepartmentWorkerMapping_Workers] FOREIGN KEY ([WorkerId]) REFERENCES [dbo].[Workers]([Id])
     );
 END
 GO
@@ -127,15 +124,6 @@ WHERE ar.[WorkerId] IS NOT NULL
       WHERE m.[WorkerId] = ar.[WorkerId] AND m.[SiteId] = wa.[SiteId]
   );
 
-INSERT INTO [dbo].[DepartmentWorkerMapping] ([DepartmentId], [WorkerId])
-SELECT DISTINCT drm.[DepartmentId], ar.[WorkerId]
-FROM [dbo].[AccessRequests] ar
-INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[RoomId] = ar.[RoomId]
-WHERE ar.[WorkerId] IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1 FROM [dbo].[DepartmentWorkerMapping] m
-      WHERE m.[DepartmentId] = drm.[DepartmentId] AND m.[WorkerId] = ar.[WorkerId]
-  );
 GO
 
 CREATE OR ALTER PROCEDURE [dbo].[DepartmentsGet]
@@ -232,53 +220,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
     DELETE FROM [dbo].[DepartmentRoomMapping] WHERE [Id] = @Id;
-    SELECT @@ROWCOUNT AS [RowsAffected];
-END
-GO
-
-CREATE OR ALTER PROCEDURE [dbo].[DepartmentWorkerMappingGet]
-    @Id INT = NULL,
-    @DepartmentId INT = NULL,
-    @WorkerId INT = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT
-        m.[Id],
-        m.[DepartmentId],
-        d.[Name] AS [DepartmentName],
-        m.[WorkerId],
-        w.[FirstName] AS [WorkerFirstName],
-        w.[LastName] AS [WorkerLastName],
-        w.[PhoneNumber] AS [WorkerPhoneNumber]
-    FROM [dbo].[DepartmentWorkerMapping] m
-    INNER JOIN [dbo].[Departments] d ON d.[Id] = m.[DepartmentId]
-    INNER JOIN [dbo].[Workers] w ON w.[Id] = m.[WorkerId]
-    WHERE (@Id IS NULL OR m.[Id] = @Id)
-      AND (@DepartmentId IS NULL OR m.[DepartmentId] = @DepartmentId)
-      AND (@WorkerId IS NULL OR m.[WorkerId] = @WorkerId)
-    ORDER BY d.[Name], w.[LastName], w.[FirstName];
-END
-GO
-
-CREATE OR ALTER PROCEDURE [dbo].[DepartmentWorkerMappingInsert]
-    @DepartmentId INT,
-    @WorkerId INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    INSERT INTO [dbo].[DepartmentWorkerMapping] ([DepartmentId], [WorkerId])
-    VALUES (@DepartmentId, @WorkerId);
-    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
-END
-GO
-
-CREATE OR ALTER PROCEDURE [dbo].[DepartmentWorkerMappingDelete]
-    @Id INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    DELETE FROM [dbo].[DepartmentWorkerMapping] WHERE [Id] = @Id;
     SELECT @@ROWCOUNT AS [RowsAffected];
 END
 GO
@@ -425,25 +366,6 @@ BEGIN
       AND d.[SiteId] = wa.[SiteId]
       AND (@DepartmentId IS NULL OR d.[Id] = @DepartmentId)
     ORDER BY u.[LastName], u.[FirstName];
-END
-GO
-
-CREATE OR ALTER PROCEDURE [dbo].[WorkerCanAccessRoom]
-    @WorkerId INT,
-    @RoomId INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT CAST(CASE WHEN EXISTS (
-        SELECT 1
-        FROM [dbo].[Rooms] r
-        INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
-        INNER JOIN [dbo].[WorkerSiteMapping] wsm ON wsm.[WorkerId] = @WorkerId AND wsm.[SiteId] = wa.[SiteId]
-        INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[RoomId] = r.[Id]
-        INNER JOIN [dbo].[Departments] d ON d.[Id] = drm.[DepartmentId] AND d.[IsActive] = 1 AND d.[SiteId] = wa.[SiteId]
-        INNER JOIN [dbo].[DepartmentWorkerMapping] dwm ON dwm.[DepartmentId] = d.[Id] AND dwm.[WorkerId] = @WorkerId
-        WHERE r.[Id] = @RoomId
-    ) THEN 1 ELSE 0 END AS INT) AS [Allowed];
 END
 GO
 

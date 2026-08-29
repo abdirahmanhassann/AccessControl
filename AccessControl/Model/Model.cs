@@ -105,13 +105,6 @@
             public int RoomId;
         }
 
-        public class DepartmentWorkerMapping
-        {
-            public int Id;
-            public int DepartmentId;
-            public int WorkerId;
-        }
-
         public class DepartmentManagerMapping
         {
             public int Id;

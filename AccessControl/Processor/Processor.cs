@@ -758,10 +758,6 @@ namespace AccessControl.Processor
                 {
                     return CreateFailureResponse("A manager must be selected to approve this request.");
                 }
-                if (!_db.WorkerCanAccessRoom(workerId, roomId))
-                {
-                    return CreateFailureResponse("This worker is not assigned to the site and department for that room.");
-                }
                 if (!_db.ManagerCanApprove(approverUserId, roomId, null))
                 {
                     return CreateFailureResponse("That manager is not assigned to the department and site for that room.");
@@ -1501,73 +1497,6 @@ namespace AccessControl.Processor
             try
             {
                 _db.DeleteDepartmentRoomMapping(id);
-
-                return CreateSuccessResponseNoData();
-            }
-            catch (Exception ex)
-            {
-                _db.LogError(
-                    MethodBase.GetCurrentMethod()?.Module + "/" +
-                    MethodBase.GetCurrentMethod()?.Name!,
-                    ex.Message + " " + ex.StackTrace,
-                    userId);
-
-                return CreateFailureResponse(GENERIC_ERROR);
-            }
-        }
-
-        public GenericResponse GetDepartmentWorkerMappings(int userId)
-        {
-            try
-            {
-                DataTable dt = _db.GetDepartmentWorkerMappings();
-
-                return CreateSuccessResponseWithData(dt);
-            }
-            catch (Exception ex)
-            {
-                _db.LogError(
-                    MethodBase.GetCurrentMethod()?.Module + "/" +
-                    MethodBase.GetCurrentMethod()?.Name!,
-                    ex.Message + " " + ex.StackTrace,
-                    userId);
-
-                return CreateFailureResponse(GENERIC_ERROR);
-            }
-        }
-
-        public GenericResponse InsertDepartmentWorkerMapping(
-            int userId,
-            int departmentId,
-            int workerId)
-        {
-            try
-            {
-                _db.InsertDepartmentWorkerMapping(
-                    departmentId,
-                    workerId);
-
-                return CreateSuccessResponseNoData();
-            }
-            catch (Exception ex)
-            {
-                _db.LogError(
-                    MethodBase.GetCurrentMethod()?.Module + "/" +
-                    MethodBase.GetCurrentMethod()?.Name!,
-                    ex.Message + " " + ex.StackTrace,
-                    userId);
-
-                return CreateFailureResponse(GENERIC_ERROR);
-            }
-        }
-
-        public GenericResponse DeleteDepartmentWorkerMapping(
-            int userId,
-            int id)
-        {
-            try
-            {
-                _db.DeleteDepartmentWorkerMapping(id);
 
                 return CreateSuccessResponseNoData();
             }
