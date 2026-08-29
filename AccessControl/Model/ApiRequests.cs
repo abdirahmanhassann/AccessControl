@@ -406,13 +406,6 @@
             public int RoomId { get; set; }
         }
 
-        public struct InsertDepartmentWorkerMappingRequest
-        {
-            public string Token { get; set; }
-            public int DepartmentId { get; set; }
-            public int WorkerId { get; set; }
-        }
-
         public struct InsertDepartmentManagerMappingRequest
         {
             public string Token { get; set; }

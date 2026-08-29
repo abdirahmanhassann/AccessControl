@@ -1487,48 +1487,6 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public DataTable GetDepartmentWorkerMappings()
-        {
-            List<SqlParameter> sqlParams = new();
-
-            return _conn.ExecuteStoredProcedureAsDataTable(
-                "DepartmentWorkerMappingGet",
-                sqlParams.ToArray());
-        }
-
-        public void InsertDepartmentWorkerMapping(
-            int departmentId,
-            int workerId)
-        {
-            List<SqlParameter> sqlParams = new();
-
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@DepartmentId",
-                    departmentId));
-
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@WorkerId",
-                    workerId));
-
-            _conn.ExecuteStoredProcedureNoReturn(
-                "DepartmentWorkerMappingInsert",
-                sqlParams.ToArray());
-        }
-
-        public void DeleteDepartmentWorkerMapping(int id)
-        {
-            List<SqlParameter> sqlParams = new();
-
-            sqlParams.Add(
-                _conn.GenerateInputInteger("@Id", id));
-
-            _conn.ExecuteStoredProcedureNoReturn(
-                "DepartmentWorkerMappingDelete",
-                sqlParams.ToArray());
-        }
-
         public DataTable GetDepartmentManagerMappings()
         {
             List<SqlParameter> sqlParams = new();
@@ -1684,25 +1642,6 @@ namespace AccessControl.Database
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "DepartmentsForRoomGet",
                 sqlParams.ToArray());
-        }
-
-        public bool WorkerCanAccessRoom(int workerId, int roomId)
-        {
-            List<SqlParameter> sqlParams = new();
-
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@WorkerId",
-                    workerId));
-
-            sqlParams.Add(
-                _conn.GenerateInputInteger(
-                    "@RoomId",
-                    roomId));
-
-            return _conn.ExecuteStoredProcedureAsScalarInt(
-                "WorkerCanAccessRoom",
-                sqlParams.ToArray()) == 1;
         }
 
         public bool ManagerCanApprove(int approverUserId, int? roomId, int? accessRequestId)
