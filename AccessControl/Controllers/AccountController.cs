@@ -1120,5 +1120,153 @@ namespace AccessControl.Controllers
                 ret,
                 Newtonsoft.Json.Formatting.Indented);
         }
+
+        private string? Guard(string token, out int accountId)
+        {
+            accountId = string.IsNullOrWhiteSpace(token) ? 0 : _security.CheckToken(token);
+            if (accountId < 1)
+            {
+                return JsonConvert.SerializeObject(new GenericResponse
+                {
+                    Result = false,
+                    ErrorMessage = TOKEN_ERROR
+                });
+            }
+            return null;
+        }
+
+        [HttpPost("getdepartments")]
+        public string GetDepartments(TokenOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.GetDepartments(accountId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("insertdepartment")]
+        public string InsertDepartment(InsertDepartmentRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.InsertDepartment(accountId, req.SiteId, req.Name, req.Description), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("updatedepartment")]
+        public string UpdateDepartment(UpdateDepartmentRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.UpdateDepartment(accountId, req.Id, req.SiteId, req.Name, req.Description, req.IsActive), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("getdepartmentroommappings")]
+        public string GetDepartmentRoomMappings(TokenOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.GetDepartmentRoomMappings(accountId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("insertdepartmentroommapping")]
+        public string InsertDepartmentRoomMapping(InsertDepartmentRoomMappingRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.InsertDepartmentRoomMapping(accountId, req.DepartmentId, req.RoomId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("deletedepartmentroommapping")]
+        public string DeleteDepartmentRoomMapping(IdOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.DeleteDepartmentRoomMapping(accountId, req.Id), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("getdepartmentworkermappings")]
+        public string GetDepartmentWorkerMappings(TokenOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.GetDepartmentWorkerMappings(accountId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("insertdepartmentworkermapping")]
+        public string InsertDepartmentWorkerMapping(InsertDepartmentWorkerMappingRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.InsertDepartmentWorkerMapping(accountId, req.DepartmentId, req.WorkerId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("deletedepartmentworkermapping")]
+        public string DeleteDepartmentWorkerMapping(IdOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.DeleteDepartmentWorkerMapping(accountId, req.Id), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("getdepartmentmanagermappings")]
+        public string GetDepartmentManagerMappings(TokenOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.GetDepartmentManagerMappings(accountId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("insertdepartmentmanagermapping")]
+        public string InsertDepartmentManagerMapping(InsertDepartmentManagerMappingRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.InsertDepartmentManagerMapping(accountId, req.DepartmentId, req.UserId, req.IsPrimary), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("updatedepartmentmanagermapping")]
+        public string UpdateDepartmentManagerMapping(UpdateDepartmentManagerMappingRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.UpdateDepartmentManagerMapping(accountId, req.Id, req.DepartmentId, req.UserId, req.IsPrimary), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("deletedepartmentmanagermapping")]
+        public string DeleteDepartmentManagerMapping(IdOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.DeleteDepartmentManagerMapping(accountId, req.Id), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("getworkersitemappings")]
+        public string GetWorkerSiteMappings(TokenOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.GetWorkerSiteMappings(accountId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("insertworkersitemapping")]
+        public string InsertWorkerSiteMapping(InsertWorkerSiteMappingRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.InsertWorkerSiteMapping(accountId, req.WorkerId, req.SiteId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("deleteworkersitemapping")]
+        public string DeleteWorkerSiteMapping(IdOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.DeleteWorkerSiteMapping(accountId, req.Id), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("getmanagersforroom")]
+        public string GetManagersForRoom(ManagersForRoomRequest req)
+        {
+            return JsonConvert.SerializeObject(_proc.GetManagersForRoom(req.RoomId), Newtonsoft.Json.Formatting.Indented);
+        }
     }
 }

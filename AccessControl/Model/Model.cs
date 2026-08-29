@@ -87,6 +87,47 @@
             public DateTime AssignedAt;
         }
 
+        public class Department
+        {
+            public int Id;
+            public int SiteId;
+            public string Name;
+            public string Description;
+            public bool IsActive;
+            public DateTime CreatedAt;
+            public string SiteName;
+        }
+
+        public class DepartmentRoomMapping
+        {
+            public int Id;
+            public int DepartmentId;
+            public int RoomId;
+        }
+
+        public class DepartmentWorkerMapping
+        {
+            public int Id;
+            public int DepartmentId;
+            public int WorkerId;
+        }
+
+        public class DepartmentManagerMapping
+        {
+            public int Id;
+            public int DepartmentId;
+            public int UserId;
+            public bool IsPrimary;
+            public DateTime AssignedAt;
+        }
+
+        public class WorkerSiteMapping
+        {
+            public int Id;
+            public int WorkerId;
+            public int SiteId;
+        }
+
 
         public class Worker
         {
