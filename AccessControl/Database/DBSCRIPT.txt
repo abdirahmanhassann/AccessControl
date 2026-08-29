@@ -964,15 +964,15 @@ BEGIN
     UPDATE [dbo].[AccessRequests]
     SET
         [Status] = @Status,
-        [Reason] = @Reason,
-        [WorkType] = @WorkType,
-        [Description] = @Description,
-        [ApprovedAt] = @ApprovedAt,
-        [RejectedAt] = @RejectedAt,
-        [ClockedInAt] = @ClockedInAt,
-        [ExpectedClockOutAt] = @ExpectedClockOutAt,
-        [ClockedOutAt] = @ClockedOutAt,
-        [CompletedAt] = @CompletedAt
+        [Reason] = ISNULL(@Reason, [Reason]),
+        [WorkType] = ISNULL(@WorkType, [WorkType]),
+        [Description] = ISNULL(@Description, [Description]),
+        [ApprovedAt] = ISNULL(@ApprovedAt, [ApprovedAt]),
+        [RejectedAt] = ISNULL(@RejectedAt, [RejectedAt]),
+        [ClockedInAt] = ISNULL(@ClockedInAt, [ClockedInAt]),
+        [ExpectedClockOutAt] = ISNULL(@ExpectedClockOutAt, [ExpectedClockOutAt]),
+        [ClockedOutAt] = ISNULL(@ClockedOutAt, [ClockedOutAt]),
+        [CompletedAt] = ISNULL(@CompletedAt, [CompletedAt])
     WHERE [Id] = @Id;
 
     SELECT @@ROWCOUNT AS [RowsAffected];

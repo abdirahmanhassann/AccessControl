@@ -211,11 +211,12 @@
         public struct InsertAccessRequestRequest
         {
             public string PhoneNumber { get; set; }
-            public int workerId { get; set; }
+            public int WorkerId { get; set; }
             public int RoomId { get; set; }
             public string Reason { get; set; }
             public string WorkType { get; set; }
             public string Description { get; set; }
+            public int ApproverUserId { get; set; }
         }
 
         public struct UpdateAccessRequestRequest
@@ -244,11 +245,10 @@
         public struct InsertAccessRequestApprovalRequest
         {
             public string Token { get; set; }
-            public int id { get; set; }
             public int AccessRequestId { get; set; }
             public int ApproverUserId { get; set; }
-            public string status { get;set; }
-            public string comment { get; set; }
+            public string Status { get; set; }
+            public string Comment { get; set; }
         }
 
         public struct UpdateAccessRequestApprovalRequest

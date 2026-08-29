@@ -256,6 +256,23 @@ namespace AccessControl.Processor
             try
             {
                 DataTable dt = _db.GetUsers();
+                if (userId < 1)
+                {
+                    DataTable managers = dt.Clone();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        string role = row["Role"]?.ToString() ?? "";
+                        bool active = row["IsActive"] is bool flag ? flag : true;
+                        if (!active) continue;
+                        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                            || role.Equals("Manager", StringComparison.OrdinalIgnoreCase)
+                            || role.Equals("SiteManager", StringComparison.OrdinalIgnoreCase))
+                        {
+                            managers.ImportRow(row);
+                        }
+                    }
+                    dt = managers;
+                }
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -732,37 +749,55 @@ namespace AccessControl.Processor
             int roomId,
             string reason,
             string workType,
-            string? description)
+            string? description,
+            int approverUserId)
         {
             try
             {
-              int dr =  _db.InsertAccessRequest(
+                if (approverUserId < 1)
+                {
+                    return CreateFailureResponse("A manager must be selected to approve this request.");
+                }
+
+                int dr = _db.InsertAccessRequest(
                     phoneNumber,
                     workerId,
                     roomId,
                     reason,
                     workType,
                     description);
-                //Allow functionality to allow any manager to approve
-                _db.InsertAccessRequestApproval(dr,1);
+                _db.InsertAccessRequestApproval(dr, approverUserId);
+                _db.InsertAuditEvent(
+                    dr,
+                    workerId,
+                    approverUserId,
+                    "AccessRequested",
+                    $"Worker #{workerId} submitted access request #{dr} for manager #{approverUserId}.");
+
                 DataTable dt = _db.GetWorkers(workerId);
                 DataTable dt2 = _db.GetRooms(roomId);
                 string firstname = "", lastname = "", sitename = "", workareaname = "", roomname = "";
-                if(dt.Rows.Count > 0)
+                if (dt.Rows.Count > 0)
                 {
-                    firstname = dt.Rows[0].Field<string>("FirstName")!;
-                    lastname = dt.Rows[0].Field<string>("LastName")!;
-
+                    firstname = dt.Rows[0].Field<string>("FirstName") ?? "";
+                    lastname = dt.Rows[0].Field<string>("LastName") ?? "";
                 }
-                if(dt2.Rows.Count > 0)
+                if (dt2.Rows.Count > 0)
                 {
-                    sitename = dt2.Rows[0].Field<string>("SiteName")!;
-                    workareaname = dt2.Rows[0].Field<string>("WorkAreaName")!;
-                    roomname = dt2.Rows[0].Field<string>("RoomName")!;
+                    sitename = dt2.Rows[0].Field<string>("SiteName") ?? "";
+                    workareaname = dt2.Rows[0].Field<string>("WorkAreaName") ?? "";
+                    roomname = dt2.Rows[0].Field<string>("Name") ?? dt2.Rows[0].Field<string>("RoomName") ?? "";
                 }
 
-                TwilioHelper twilio = new();
-                await twilio.ApprovalRequestAsync(firstname,lastname,sitename,workareaname,roomname,phoneNumber);
+                try
+                {
+                    TwilioHelper twilio = new();
+                    await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, phoneNumber);
+                }
+                catch
+                {
+                    /* SMS is best-effort; the request is already saved */
+                }
                 return CreateSuccessResponseWithData(dr);
             }
             catch (Exception ex)
@@ -884,29 +919,63 @@ namespace AccessControl.Processor
         {
             try
             {
+                bool approved = string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase);
+                bool rejected = string.Equals(status, "Rejected", StringComparison.OrdinalIgnoreCase);
+                bool cancelled = string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+                string normalized =
+                    approved ? "Approved" :
+                    rejected ? "Rejected" :
+                    cancelled ? "Cancelled" :
+                    status;
+
                 _db.UpdateAccessRequestApproval(
                     id,
-                    status,
+                    normalized,
                     comment);
 
-                _db.UpdateAccessRequest(
-                            accessRequestId,
-                            workerId,
-                            roomId,
-                            status,
-                            reason,
-                            workType,
-                            description,
-                            status == "Approved" ? DateTime.Now : approvedAt,
-                            status == "rejected" ? DateTime.Now : rejectedAt,
-                            null,
-                            null,
-                            null,
-                            null);
-                DataRow dr = _db.GetRoomByAccessRequestId(accessRequestId);
-                TwilioHelper twilio = new();
+                if (accessRequestId > 0)
+                {
+                    _db.UpdateAccessRequest(
+                        accessRequestId,
+                        workerId,
+                        roomId,
+                        normalized,
+                        reason,
+                        workType,
+                        description,
+                        approved ? DateTime.Now : approvedAt,
+                        rejected ? DateTime.Now : rejectedAt,
+                        approved ? DateTime.Now : null,
+                        null,
+                        null,
+                        null);
+                }
 
-               await twilio.StatusUpdateAsync(status.ToLower(), dr.Field<string>("PhoneNumber")!.ToString(), dr.Field<string>("Name")!.ToString(), comment);
+                _db.InsertAuditEvent(
+                    accessRequestId > 0 ? accessRequestId : null,
+                    workerId,
+                    approverUserId,
+                    normalized,
+                    $"Manager #{approverUserId} marked request #{accessRequestId} as {normalized}.");
+
+                DataRow dr = _db.GetRoomByAccessRequestId(accessRequestId);
+                if (dr != null)
+                {
+                    string phone = dr.Table.Columns.Contains("PhoneNumber") ? dr.Field<string>("PhoneNumber") ?? "" : "";
+                    string roomName = dr.Table.Columns.Contains("Name") ? dr.Field<string>("Name") ?? "" : "";
+                    if (!string.IsNullOrWhiteSpace(phone))
+                    {
+                        try
+                        {
+                            TwilioHelper twilio = new();
+                            await twilio.StatusUpdateAsync(normalized.ToLowerInvariant(), phone, roomName, comment);
+                        }
+                        catch
+                        {
+                            /* SMS is best-effort */
+                        }
+                    }
+                }
                 return CreateSuccessResponseNoData();
             }
             catch (Exception ex)
