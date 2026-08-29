@@ -11,7 +11,7 @@ using static AccessControl.Model.Model;
 namespace AccessControl.Processor
 {
 
-    public partial class AccessProcessor
+    public class AccessProcessor
     {
         private IConfiguration _config;
         private DatabaseLogic _db;
@@ -1362,6 +1362,407 @@ namespace AccessControl.Processor
                     MethodBase.GetCurrentMethod()?.Name!,
                     ex.Message + " " + ex.StackTrace,
                     userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        // ============================================================
+        // DEPARTMENTS
+        // ============================================================
+
+        public GenericResponse GetDepartments(int userId)
+        {
+            try
+            {
+                DataTable dt = _db.GetDepartments();
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse InsertDepartment(
+            int userId,
+            int siteId,
+            string name,
+            string? description)
+        {
+            try
+            {
+                _db.InsertDepartment(
+                    siteId,
+                    name,
+                    description);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse UpdateDepartment(
+            int userId,
+            int id,
+            int siteId,
+            string name,
+            string? description,
+            bool isActive)
+        {
+            try
+            {
+                _db.UpdateDepartment(
+                    id,
+                    siteId,
+                    name,
+                    description,
+                    isActive);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse GetDepartmentRoomMappings(int userId)
+        {
+            try
+            {
+                DataTable dt = _db.GetDepartmentRoomMappings();
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse InsertDepartmentRoomMapping(
+            int userId,
+            int departmentId,
+            int roomId)
+        {
+            try
+            {
+                _db.InsertDepartmentRoomMapping(
+                    departmentId,
+                    roomId);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse DeleteDepartmentRoomMapping(
+            int userId,
+            int id)
+        {
+            try
+            {
+                _db.DeleteDepartmentRoomMapping(id);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse GetDepartmentWorkerMappings(int userId)
+        {
+            try
+            {
+                DataTable dt = _db.GetDepartmentWorkerMappings();
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse InsertDepartmentWorkerMapping(
+            int userId,
+            int departmentId,
+            int workerId)
+        {
+            try
+            {
+                _db.InsertDepartmentWorkerMapping(
+                    departmentId,
+                    workerId);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse DeleteDepartmentWorkerMapping(
+            int userId,
+            int id)
+        {
+            try
+            {
+                _db.DeleteDepartmentWorkerMapping(id);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse GetDepartmentManagerMappings(int userId)
+        {
+            try
+            {
+                DataTable dt = _db.GetDepartmentManagerMappings();
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse InsertDepartmentManagerMapping(
+            int userId,
+            int departmentId,
+            int managerUserId,
+            bool isPrimary)
+        {
+            try
+            {
+                _db.InsertDepartmentManagerMapping(
+                    departmentId,
+                    managerUserId,
+                    isPrimary);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse UpdateDepartmentManagerMapping(
+            int userId,
+            int id,
+            int departmentId,
+            int managerUserId,
+            bool isPrimary)
+        {
+            try
+            {
+                _db.UpdateDepartmentManagerMapping(
+                    id,
+                    departmentId,
+                    managerUserId,
+                    isPrimary);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse DeleteDepartmentManagerMapping(
+            int userId,
+            int id)
+        {
+            try
+            {
+                _db.DeleteDepartmentManagerMapping(id);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse GetWorkerSiteMappings(int userId)
+        {
+            try
+            {
+                DataTable dt = _db.GetWorkerSiteMappings();
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse InsertWorkerSiteMapping(
+            int userId,
+            int workerId,
+            int siteId)
+        {
+            try
+            {
+                _db.InsertWorkerSiteMapping(
+                    workerId,
+                    siteId);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse DeleteWorkerSiteMapping(
+            int userId,
+            int id)
+        {
+            try
+            {
+                _db.DeleteWorkerSiteMapping(id);
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse GetManagersForRoom(int roomId)
+        {
+            try
+            {
+                DataTable dt = _db.GetManagersForRoom(roomId);
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
 
                 return CreateFailureResponse(GENERIC_ERROR);
             }
