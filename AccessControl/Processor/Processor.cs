@@ -794,7 +794,7 @@ namespace AccessControl.Processor
                 {
                     sitename = dt2.Rows[0].Field<string>("SiteName") ?? "";
                     workareaname = dt2.Rows[0].Field<string>("WorkAreaName") ?? "";
-                    roomname = dt2.Rows[0].Field<string>("Name") ?? dt2.Rows[0].Field<string>("RoomName") ?? "";
+                    roomname = dt2.Rows[0].Field<string>("RoomName") ?? dt2.Rows[0].Field<string>("RoomName") ?? "";
                 }
 
                 try
