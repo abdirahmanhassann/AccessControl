@@ -815,9 +815,13 @@ namespace AccessControl.Processor
                     TwilioHelper twilio = new();
                     await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, phoneNumber);
                 }
-                catch
+                catch (Exception smsEx)
                 {
-                    /* SMS is best-effort; the request is already saved */
+                    _db.LogError(
+                        MethodBase.GetCurrentMethod()?.Module + "/" +
+                        MethodBase.GetCurrentMethod()?.Name!,
+                        "Twilio SMS skipped: " + smsEx.Message,
+                        0);
                 }
                 return CreateSuccessResponseWithData(dr);
             }
@@ -996,9 +1000,13 @@ namespace AccessControl.Processor
                             TwilioHelper twilio = new();
                             await twilio.StatusUpdateAsync(normalized.ToLowerInvariant(), phone, roomName, comment ?? "");
                         }
-                        catch
+                        catch (Exception smsEx)
                         {
-                            /* SMS is best-effort */
+                            _db.LogError(
+                                MethodBase.GetCurrentMethod()?.Module + "/" +
+                                MethodBase.GetCurrentMethod()?.Name!,
+                                "Twilio SMS skipped: " + smsEx.Message,
+                                approverUserId);
                         }
                     }
                 }
