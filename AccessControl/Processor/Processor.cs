@@ -857,9 +857,9 @@ namespace AccessControl.Processor
             int id,
             int workerId,
             int roomId,
-            string status,
-            string reason,
-            string workType,
+            string? status,
+            string? reason,
+            string? workType,
             string? description,
             DateTime? approvedAt,
             DateTime? rejectedAt,
@@ -870,6 +870,11 @@ namespace AccessControl.Processor
         {
             try
             {
+                if (clockedInAt.HasValue && !expectedClockOutAt.HasValue)
+                {
+                    expectedClockOutAt = ResolveExpectedClockOut(roomId, id);
+                }
+
                 _db.UpdateAccessRequest(
                     id,
                     workerId,
@@ -1005,8 +1010,8 @@ namespace AccessControl.Processor
                         description,
                         approved ? DateTime.Now : approvedAt,
                         rejected ? DateTime.Now : rejectedAt,
-                        approved ? DateTime.Now : null,
                         null,
+                        approved ? ResolveExpectedClockOut(roomId, accessRequestId) : null,
                         null,
                         null);
                 }
@@ -1787,3 +1792,43 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
+
+        DateTime ResolveExpectedClockOut(int? roomId, int accessRequestId)
+        {
+            int workAreaId = 0;
+            try
+            {
+                if (roomId.HasValue && roomId.Value > 0)
+                {
+                    DataTable rooms = _db.GetRooms(roomId.Value);
+                    if (rooms.Rows.Count > 0 && rooms.Columns.Contains("WorkAreaId") && rooms.Rows[0]["WorkAreaId"] != DBNull.Value)
+                    {
+                        workAreaId = Convert.ToInt32(rooms.Rows[0]["WorkAreaId"]);
+                    }
+                }
+                if (workAreaId < 1 && accessRequestId > 0)
+                {
+                    DataRow room = _db.GetRoomByAccessRequestId(accessRequestId);
+                    if (room != null && room.Table.Columns.Contains("WorkAreaId") && room["WorkAreaId"] != DBNull.Value)
+                    {
+                        workAreaId = Convert.ToInt32(room["WorkAreaId"]);
+                    }
+                }
+                int dayOfWeek = (int)DateTime.Now.DayOfWeek;
+                DataTable windows = _db.GetAccessWindows();
+                foreach (DataRow row in windows.Rows)
+                {
+                    if (workAreaId > 0 && Convert.ToInt32(row["WorkAreaId"]) != workAreaId) continue;
+                    if (Convert.ToInt32(row["DayOfWeek"]) != dayOfWeek) continue;
+                    TimeSpan end = row["EndTime"] is TimeSpan ts ? ts : TimeSpan.Parse(row["EndTime"].ToString()!);
+                    return DateTime.Today.Add(end);
+                }
+            }
+            catch
+            {
+                /* fall through to default window */
+            }
+            return DateTime.Now.AddHours(8);
+        }
+    }
+}

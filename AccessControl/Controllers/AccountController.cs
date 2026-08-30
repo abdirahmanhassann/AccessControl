@@ -628,16 +628,20 @@ namespace AccessControl.Controllers
         [HttpPost("getaccessrequests")]
         public string GetAccessRequests(GetAccessRequestsRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
+            int accountId = _security.CheckToken(req.Token ?? "");
 
             if (accountId < 1)
             {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
+                if (req.WorkerId < 1 && req.Id < 1)
+                {
+                    return JsonConvert.SerializeObject(
+                        new GenericResponse()
+                        {
+                            Result = false,
+                            ErrorMessage = TOKEN_ERROR
+                        });
+                }
+                accountId = 0;
             }
 
             GenericResponse ret =
@@ -680,16 +684,20 @@ namespace AccessControl.Controllers
         public string UpdateAccessRequest(
             UpdateAccessRequestRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
+            int accountId = _security.CheckToken(req.Token ?? "");
 
             if (accountId < 1)
             {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
+                if (req.Id < 1 || req.WorkerId < 1)
+                {
+                    return JsonConvert.SerializeObject(
+                        new GenericResponse()
+                        {
+                            Result = false,
+                            ErrorMessage = TOKEN_ERROR
+                        });
+                }
+                accountId = 0;
             }
 
             GenericResponse ret = _proc.UpdateAccessRequest(

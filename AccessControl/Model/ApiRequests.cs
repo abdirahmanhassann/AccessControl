@@ -210,7 +210,7 @@
 
         public struct GetAccessRequestsRequest
         {
-            public string Token { get; set; }
+            public string? Token { get; set; }
             public int Id { get; set; }
             public int WorkerId { get; set; }
             public int RoomId { get; set; }
@@ -245,14 +245,14 @@
 
         public struct UpdateAccessRequestRequest
         {
-            public string Token { get; set; }
+            public string? Token { get; set; }
             public int Id { get; set; }
             public int WorkerId { get; set; }
             public int RoomId { get; set; }
-            public string Status { get; set; }
-            public string Reason { get; set; }
-            public string WorkType { get; set; }
-            public string Description { get; set; }
+            public string? Status { get; set; }
+            public string? Reason { get; set; }
+            public string? WorkType { get; set; }
+            public string? Description { get; set; }
             public DateTime? ApprovedAt { get; set; }
             public DateTime? RejectedAt { get; set; }
             public DateTime? ClockedInAt { get; set; }
