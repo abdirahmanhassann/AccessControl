@@ -204,9 +204,6 @@
         }
 
 
-        // ============================================================
-        // ACCESS REQUESTS
-        // ============================================================
 
         public struct GetAccessRequestsRequest
         {
@@ -214,8 +211,8 @@
             public int Id { get; set; }
             public int WorkerId { get; set; }
             public int RoomId { get; set; }
-            public string Status { get; set; }
-            public string Search { get; set; }
+            public string? Status { get; set; }
+            public string? Search { get; set; }
             public int Skip { get; set; }
             public int Take { get; set; }
         }
@@ -226,8 +223,8 @@
             public int Id { get; set; }
             public int AccessRequestId { get; set; }
             public int ApproverUserId { get; set; }
-            public string Status { get; set; }
-            public string Search { get; set; }
+            public string? Status { get; set; }
+            public string? Search { get; set; }
             public int Skip { get; set; }
             public int Take { get; set; }
         }
