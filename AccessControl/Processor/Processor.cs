@@ -1192,7 +1192,7 @@ namespace AccessControl.Processor
                 TwilioHelper twilio = new();
                 int code = ApiHelper.GenerateNumericOtp();
                 //COMMENTED OOUT FOR TESTING PURPOSES. DONT WANNA WASTE TEXT CREDITS
-               // await twilio.SendMessageAsync(phoneNumber, code);
+                await twilio.SendMessageAsync(phoneNumber, code);
 
                 _db.InsertOTPVerification(
                     phoneNumber,
@@ -1757,3 +1757,5 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
+    }
+}
