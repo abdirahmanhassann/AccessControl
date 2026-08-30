@@ -632,7 +632,7 @@ namespace AccessControl.Controllers
 
             if (accountId < 1)
             {
-                if (req.WorkerId < 1 && req.Id < 1)
+                if (req.WorkerId < 1 && req.Id < 1 && req.RoomId < 1)
                 {
                     return JsonConvert.SerializeObject(
                         new GenericResponse()
