@@ -740,11 +740,26 @@ namespace AccessControl.Processor
             }
         }
 
-        public GenericResponse GetAccessRequests(int userId)
+        public GenericResponse GetAccessRequests(
+            int userId,
+            int id,
+            int workerId,
+            int roomId,
+            string? status,
+            string? search,
+            int skip,
+            int take)
         {
             try
             {
-                DataTable dt = _db.GetAccessRequests();
+                DataTable dt = _db.GetAccessRequests(
+                    id,
+                    workerId,
+                    roomId,
+                    status,
+                    search,
+                    skip,
+                    take);
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -883,11 +898,26 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-        public GenericResponse GetAccessRequestApprovals(int userId)
+        public GenericResponse GetAccessRequestApprovals(
+            int userId,
+            int id,
+            int accessRequestId,
+            int approverUserId,
+            string? status,
+            string? search,
+            int skip,
+            int take)
         {
             try
             {
-                DataTable dt = _db.GetAccessRequestApprovals();
+                DataTable dt = _db.GetAccessRequestApprovals(
+                    id,
+                    accessRequestId,
+                    approverUserId,
+                    status,
+                    search,
+                    skip,
+                    take);
 
                 return CreateSuccessResponseWithData(dt);
             }

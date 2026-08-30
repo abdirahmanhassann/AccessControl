@@ -480,3 +480,122 @@ BEGIN
     END
 END
 GO
+
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestsGet]
+    @Id INT = NULL,
+    @WorkerId INT = NULL,
+    @RoomId INT = NULL,
+    @Status NVARCHAR(30) = NULL,
+    @Search NVARCHAR(200) = NULL,
+    @Skip INT = 0,
+    @Take INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Offset INT = CASE WHEN @Skip IS NULL OR @Skip < 0 THEN 0 ELSE @Skip END;
+    DECLARE @RowCount INT = CASE WHEN @Take IS NULL OR @Take < 1 THEN 1000000 ELSE @Take END;
+
+    SELECT
+        ar.[Id],
+        ar.[WorkerId],
+        w.[FirstName] AS [WorkerFirstName],
+        w.[LastName] AS [WorkerLastName],
+        w.[PhoneNumber] AS [WorkerPhoneNumber],
+        w.[CompanyName],
+        ar.[RoomId],
+        r.[RoomNumber],
+        r.[Name] AS [RoomName],
+        wa.[Id] AS [WorkAreaId],
+        wa.[Name] AS [WorkAreaName],
+        ar.[Status],
+        ar.[Reason],
+        ar.[WorkType],
+        ar.[Description],
+        ar.[RequestedAt],
+        ar.[ApprovedAt],
+        ar.[RejectedAt],
+        ar.[ClockedInAt],
+        ar.[ExpectedClockOutAt],
+        ar.[ClockedOutAt],
+        ar.[CompletedAt],
+        COUNT(*) OVER() AS [Total]
+    FROM [dbo].[AccessRequests] ar
+    INNER JOIN [dbo].[Workers] w
+        ON w.[Id] = ar.[WorkerId]
+    INNER JOIN [dbo].[Rooms] r
+        ON r.[Id] = ar.[RoomId]
+    INNER JOIN [dbo].[WorkAreas] wa
+        ON wa.[Id] = r.[WorkAreaId]
+    WHERE (@Id IS NULL OR ar.[Id] = @Id)
+      AND (@WorkerId IS NULL OR ar.[WorkerId] = @WorkerId)
+      AND (@RoomId IS NULL OR ar.[RoomId] = @RoomId)
+      AND (@Status IS NULL OR ar.[Status] = @Status)
+      AND (
+            @Search IS NULL OR LTRIM(RTRIM(@Search)) = ''
+            OR w.[FirstName] LIKE '%' + @Search + '%'
+            OR w.[LastName] LIKE '%' + @Search + '%'
+            OR r.[RoomNumber] LIKE '%' + @Search + '%'
+            OR r.[Name] LIKE '%' + @Search + '%'
+            OR ar.[WorkType] LIKE '%' + @Search + '%'
+            OR ar.[Reason] LIKE '%' + @Search + '%'
+          )
+    ORDER BY ar.[RequestedAt] DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @RowCount ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestApprovalsGet]
+    @Id INT = NULL,
+    @AccessRequestId INT = NULL,
+    @ApproverUserId INT = NULL,
+    @Status NVARCHAR(30) = NULL,
+    @Search NVARCHAR(200) = NULL,
+    @Skip INT = 0,
+    @Take INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Offset INT = CASE WHEN @Skip IS NULL OR @Skip < 0 THEN 0 ELSE @Skip END;
+    DECLARE @RowCount INT = CASE WHEN @Take IS NULL OR @Take < 1 THEN 1000000 ELSE @Take END;
+
+    SELECT
+        ara.[Id],
+        ara.[AccessRequestId],
+        ara.[ApproverUserId],
+        u.[FirstName] AS [ApproverFirstName],
+        u.[LastName] AS [ApproverLastName],
+        u.[Email] AS [ApproverEmail],
+        w.[FirstName] AS [WorkerFirstName],
+        w.[LastName] AS [WorkerLastName],
+        w.[PhoneNumber] AS [WorkerPhoneNumber],
+        ara.[Status],
+        ara.[Comment],
+        ara.[ReviewedAt],
+        ar.[RequestedAt] AS [AccessrequestCreatedAt],
+        COUNT(*) OVER() AS [Total]
+    FROM [dbo].[AccessRequestApprovals] ara
+    INNER JOIN [dbo].[Users] u
+        ON u.[Id] = ara.[ApproverUserId]
+    INNER JOIN [dbo].[AccessRequests] ar
+        ON ar.[Id] = ara.[AccessRequestId]
+    INNER JOIN [dbo].[Workers] w
+        ON w.[Id] = ar.[WorkerId]
+    WHERE (@Id IS NULL OR ara.[Id] = @Id)
+      AND (@AccessRequestId IS NULL OR ara.[AccessRequestId] = @AccessRequestId)
+      AND (@ApproverUserId IS NULL OR ara.[ApproverUserId] = @ApproverUserId)
+      AND (@Status IS NULL OR ara.[Status] = @Status)
+      AND (
+            @Search IS NULL OR LTRIM(RTRIM(@Search)) = ''
+            OR w.[FirstName] LIKE '%' + @Search + '%'
+            OR w.[LastName] LIKE '%' + @Search + '%'
+            OR u.[FirstName] LIKE '%' + @Search + '%'
+            OR u.[LastName] LIKE '%' + @Search + '%'
+          )
+    ORDER BY ar.[RequestedAt] DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @RowCount ROWS ONLY;
+END
+GO

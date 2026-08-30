@@ -687,9 +687,49 @@ namespace AccessControl.Database
         // ACCESS REQUESTS
         // ============================================================
 
-        public DataTable GetAccessRequests()
+        public DataTable GetAccessRequests(
+            int id,
+            int workerId,
+            int roomId,
+            string? status,
+            string? search,
+            int skip,
+            int take)
         {
             List<SqlParameter> sqlParams = new();
+
+            if (id > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@Id", id));
+            }
+            if (workerId > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@WorkerId", workerId));
+            }
+            if (roomId > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@RoomId", roomId));
+            }
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputString("@Status", status, 30));
+            }
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputString("@Search", search, 200));
+            }
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Skip", skip < 0 ? 0 : skip));
+            if (take > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@Take", take));
+            }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "AccessRequestsGet",
@@ -843,9 +883,49 @@ namespace AccessControl.Database
         }
 
 
-        public DataTable GetAccessRequestApprovals()
+        public DataTable GetAccessRequestApprovals(
+            int id,
+            int accessRequestId,
+            int approverUserId,
+            string? status,
+            string? search,
+            int skip,
+            int take)
         {
             List<SqlParameter> sqlParams = new();
+
+            if (id > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@Id", id));
+            }
+            if (accessRequestId > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@AccessRequestId", accessRequestId));
+            }
+            if (approverUserId > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@ApproverUserId", approverUserId));
+            }
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputString("@Status", status, 30));
+            }
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputString("@Search", search, 200));
+            }
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@Skip", skip < 0 ? 0 : skip));
+            if (take > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@Take", take));
+            }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "AccessRequestApprovalsGet",

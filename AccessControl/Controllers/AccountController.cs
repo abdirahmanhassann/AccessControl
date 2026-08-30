@@ -626,7 +626,7 @@ namespace AccessControl.Controllers
         // ============================================================
 
         [HttpPost("getaccessrequests")]
-        public string GetAccessRequests(TokenOnlyRequest req)
+        public string GetAccessRequests(GetAccessRequestsRequest req)
         {
             int accountId = _security.CheckToken(req.Token);
 
@@ -641,7 +641,15 @@ namespace AccessControl.Controllers
             }
 
             GenericResponse ret =
-                _proc.GetAccessRequests((int)accountId);
+                _proc.GetAccessRequests(
+                    (int)accountId,
+                    req.Id,
+                    req.WorkerId,
+                    req.RoomId,
+                    req.Status,
+                    req.Search,
+                    req.Skip,
+                    req.Take);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -707,7 +715,7 @@ namespace AccessControl.Controllers
 
         [HttpPost("getaccessrequestapprovals")]
         public string GetAccessRequestApprovals(
-            TokenOnlyRequest req)
+            GetAccessRequestApprovalsRequest req)
         {
             int accountId = _security.CheckToken(req.Token);
 
@@ -722,7 +730,15 @@ namespace AccessControl.Controllers
             }
 
             GenericResponse ret =
-                _proc.GetAccessRequestApprovals((int)accountId);
+                _proc.GetAccessRequestApprovals(
+                    (int)accountId,
+                    req.Id,
+                    req.AccessRequestId,
+                    req.ApproverUserId,
+                    req.Status,
+                    req.Search,
+                    req.Skip,
+                    req.Take);
 
             return JsonConvert.SerializeObject(
                 ret,
