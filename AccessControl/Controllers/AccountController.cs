@@ -684,20 +684,31 @@ namespace AccessControl.Controllers
         public string UpdateAccessRequest(
             UpdateAccessRequestRequest req)
         {
-            int accountId = _security.CheckToken(req.Token ?? "");
-
-            if (accountId < 1)
+            int accountId = 0;
+            try
             {
-                if (req.Id < 1 || req.WorkerId < 1)
+                if (!string.IsNullOrWhiteSpace(req.Token))
                 {
-                    return JsonConvert.SerializeObject(
-                        new GenericResponse()
-                        {
-                            Result = false,
-                            ErrorMessage = TOKEN_ERROR
-                        });
+                    accountId = _security.CheckToken(req.Token);
                 }
+            }
+            catch
+            {
                 accountId = 0;
+            }
+
+            bool workerClock =
+                req.Id > 0 &&
+                (req.ClockedInAt.HasValue || req.ClockedOutAt.HasValue || req.CompletedAt.HasValue);
+
+            if (accountId < 1 && !workerClock && (req.Id < 1 || req.WorkerId < 1))
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
+                    {
+                        Result = false,
+                        ErrorMessage = TOKEN_ERROR
+                    });
             }
 
             GenericResponse ret = _proc.UpdateAccessRequest(
