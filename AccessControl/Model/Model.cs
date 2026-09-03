@@ -12,6 +12,7 @@
             public string Name;
             public string Address;
             public string Reference;
+            public string QrCodeIdentifier;
             public bool IsActive;
             public DateTime CreatedAt;
         }
@@ -34,6 +35,8 @@
             public string SiteName;
             public string SiteAddress;
             public string SiteReference;
+            public string LocationKind;
+            public string ScanKind;
         }
 
 
@@ -57,8 +60,18 @@
             public string Name;
             public string QrCodeIdentifier;
             public string Description;
+            public string LocationKind;
             public bool IsActive;
             public DateTime CreatedAt;
+        }
+
+        public class RoomManager
+        {
+            public int Id;
+            public int RoomId;
+            public int UserId;
+            public bool IsPrimary;
+            public DateTime AssignedAt;
         }
 
 
@@ -163,6 +176,10 @@
             public string Reason;
             public string WorkType;
             public string Description;
+
+            public string SupervisorName;
+            public DateTime? WorkFrom;
+            public DateTime? WorkTo;
 
             public DateTime RequestedAt;
             public DateTime? ApprovedAt;

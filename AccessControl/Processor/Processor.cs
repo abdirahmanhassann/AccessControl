@@ -109,14 +109,16 @@ namespace AccessControl.Processor
             int userId,
             string name,
             string? address,
-            string? reference)
+            string? reference,
+            string? qrCodeIdentifier)
         {
             try
             {
                 _db.InsertSite(
                     name,
                     address,
-                    reference);
+                    reference,
+                    qrCodeIdentifier);
 
                 return CreateSuccessResponseNoData();
             }
@@ -138,6 +140,7 @@ namespace AccessControl.Processor
             string name,
             string? address,
             string? reference,
+            string? qrCodeIdentifier,
             bool isActive)
         {
             try
@@ -147,6 +150,7 @@ namespace AccessControl.Processor
                     name,
                     address,
                     reference,
+                    qrCodeIdentifier,
                     isActive);
 
                 return CreateSuccessResponseNoData();
@@ -168,11 +172,11 @@ namespace AccessControl.Processor
         // WORK AREAS
         // ============================================================
 
-        public GenericResponse GetWorkAreas(int userId)
+        public GenericResponse GetWorkAreas(int userId, int siteId = 0)
         {
             try
             {
-                DataTable dt = _db.GetWorkAreas();
+                DataTable dt = _db.GetWorkAreas(siteId);
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -543,11 +547,11 @@ namespace AccessControl.Processor
         // ROOMS
         // ============================================================
 
-        public GenericResponse GetRooms(int userId)
+        public GenericResponse GetRooms(int userId, int workAreaId = 0, int siteId = 0)
         {
             try
             {
-                DataTable dt = _db.GetRooms(null);
+                DataTable dt = _db.GetRooms(null, workAreaId, siteId);
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -562,19 +566,33 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-        public GenericResponse ScanQrCode(Guid qrCodeIdentifier)
+        public GenericResponse ScanQrCode(string qrCodeIdentifier)
         {
             try
             {
-                DataRow dr = _db.GetRoomByQrCode(qrCodeIdentifier);
-
-                if (dr == null)
+                if (string.IsNullOrWhiteSpace(qrCodeIdentifier))
                 {
-                    return CreateFailureResponse(
-                        "The QR code is invalid or the room is no longer active.");
+                    return CreateFailureResponse("QR code is required.");
                 }
 
-                return CreateSuccessResponseWithData(dr);
+                string code = qrCodeIdentifier.Trim();
+                DataRow site = _db.GetSiteByQrCode(code);
+                if (site != null)
+                {
+                    return CreateSuccessResponseWithData(site);
+                }
+
+                if (Guid.TryParse(code, out Guid roomQr))
+                {
+                    DataRow room = _db.GetRoomByQrCode(roomQr);
+                    if (room != null)
+                    {
+                        return CreateSuccessResponseWithData(room);
+                    }
+                }
+
+                return CreateFailureResponse(
+                    "The QR code is invalid or the site is no longer active.");
             }
             catch (Exception ex)
             {
@@ -594,7 +612,8 @@ namespace AccessControl.Processor
             int workAreaId,
             string roomNumber,
             string? name,
-            string? description)
+            string? description,
+            string? locationKind)
         {
             try
             {
@@ -602,7 +621,8 @@ namespace AccessControl.Processor
                     workAreaId,
                     roomNumber,
                     name,
-                    description);
+                    description,
+                    locationKind);
 
                 return CreateSuccessResponseNoData();
             }
@@ -626,6 +646,7 @@ namespace AccessControl.Processor
             string? name,
             string qrCodeIdentifier,
             string? description,
+            string? locationKind,
             bool isActive)
         {
             try
@@ -637,6 +658,7 @@ namespace AccessControl.Processor
                     name,
                     qrCodeIdentifier,
                     description,
+                    locationKind,
                     isActive);
 
                 return CreateSuccessResponseNoData();
@@ -748,7 +770,8 @@ namespace AccessControl.Processor
             string? status,
             string? search,
             int skip,
-            int take)
+            int take,
+            int siteId = 0)
         {
             try
             {
@@ -759,7 +782,8 @@ namespace AccessControl.Processor
                     status,
                     search,
                     skip,
-                    take);
+                    take,
+                    siteId);
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -782,7 +806,10 @@ namespace AccessControl.Processor
             string reason,
             string workType,
             string? description,
-            int approverUserId)
+            int approverUserId,
+            string? supervisorName,
+            DateTime? workFrom,
+            DateTime? workTo)
         {
             try
             {
@@ -792,7 +819,7 @@ namespace AccessControl.Processor
                 }
                 if (!_db.ManagerCanApprove(approverUserId, roomId, null))
                 {
-                    return CreateFailureResponse("That manager is not assigned to the department and site for that room.");
+                    return CreateFailureResponse("That manager is not assigned to that location.");
                 }
 
                 int dr = _db.InsertAccessRequest(
@@ -801,7 +828,10 @@ namespace AccessControl.Processor
                     roomId,
                     reason,
                     workType,
-                    description);
+                    description,
+                    supervisorName,
+                    workFrom,
+                    workTo);
                 _db.InsertAccessRequestApproval(dr, approverUserId);
                 _db.InsertAuditEvent(
                     dr,
@@ -990,7 +1020,7 @@ namespace AccessControl.Processor
 
                 if (!_db.ManagerCanApprove(approverUserId, roomId, accessRequestId))
                 {
-                    return CreateFailureResponse("You are not assigned to the department and site for this room.");
+                    return CreateFailureResponse("You are not assigned to this location.");
                 }
 
                 _db.UpdateAccessRequestApproval(
@@ -1000,6 +1030,12 @@ namespace AccessControl.Processor
 
                 if (accessRequestId > 0)
                 {
+                    DateTime? expectedOut = null;
+                    if (approved)
+                    {
+                        expectedOut = _db.GetAccessRequestWorkTo(accessRequestId)
+                            ?? ResolveExpectedClockOut(roomId, accessRequestId);
+                    }
                     _db.UpdateAccessRequest(
                         accessRequestId,
                         workerId,
@@ -1011,7 +1047,7 @@ namespace AccessControl.Processor
                         approved ? DateTime.Now : approvedAt,
                         rejected ? DateTime.Now : rejectedAt,
                         null,
-                        approved ? ResolveExpectedClockOut(roomId, accessRequestId) : null,
+                        expectedOut,
                         null,
                         null);
                 }
@@ -1769,6 +1805,60 @@ namespace AccessControl.Processor
                     ex.Message + " " + ex.StackTrace,
                     0);
 
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse GetRoomManagers(int userId)
+        {
+            try
+            {
+                DataTable dt = _db.GetRoomManagers();
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse InsertRoomManager(int userId, int roomId, int managerUserId, bool isPrimary)
+        {
+            try
+            {
+                _db.InsertRoomManager(roomId, managerUserId, isPrimary);
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse UpdateRoomManager(int userId, int id, int roomId, int managerUserId, bool isPrimary)
+        {
+            try
+            {
+                _db.UpdateRoomManager(id, roomId, managerUserId, isPrimary);
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }

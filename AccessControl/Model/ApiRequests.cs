@@ -28,6 +28,7 @@
             public string Name { get; set; }
             public string Address { get; set; }
             public string Reference { get; set; }
+            public string QrCodeIdentifier { get; set; }
         }
 
         public struct UpdateSiteRequest
@@ -37,6 +38,7 @@
             public string Name { get; set; }
             public string Address { get; set; }
             public string Reference { get; set; }
+            public string QrCodeIdentifier { get; set; }
             public bool IsActive { get; set; }
         }
 
@@ -89,9 +91,23 @@
             public string Role { get; set; }
             public bool IsActive { get; set; }
         }
+        public struct GetWorkAreasRequest
+        {
+            public string? Token { get; set; }
+            public int SiteId { get; set; }
+        }
+
+        public struct GetRoomsRequest
+        {
+            public string? Token { get; set; }
+            public int Id { get; set; }
+            public int WorkAreaId { get; set; }
+            public int SiteId { get; set; }
+        }
+
         public struct ScanQrCodeRequest
         {
-            public Guid QrCodeIdentifier { get; set; }
+            public string QrCodeIdentifier { get; set; }
         }
         public struct CreateUserRequest
         {
@@ -164,6 +180,7 @@
             public string RoomNumber { get; set; }
             public string Name { get; set; }
             public string Description { get; set; }
+            public string LocationKind { get; set; }
         }
 
         public struct UpdateRoomRequest
@@ -175,7 +192,25 @@
             public string Name { get; set; }
             public string QrCodeIdentifier { get; set; }
             public string Description { get; set; }
+            public string LocationKind { get; set; }
             public bool IsActive { get; set; }
+        }
+
+        public struct InsertRoomManagerRequest
+        {
+            public string Token { get; set; }
+            public int RoomId { get; set; }
+            public int ManagerUserId { get; set; }
+            public bool IsPrimary { get; set; }
+        }
+
+        public struct UpdateRoomManagerRequest
+        {
+            public string Token { get; set; }
+            public int Id { get; set; }
+            public int RoomId { get; set; }
+            public int ManagerUserId { get; set; }
+            public bool IsPrimary { get; set; }
         }
 
 
@@ -214,6 +249,7 @@
             public int Id { get; set; }
             public int WorkerId { get; set; }
             public int RoomId { get; set; }
+            public int SiteId { get; set; }
             public string? Status { get; set; }
             public string? Search { get; set; }
             public int Skip { get; set; }
@@ -241,6 +277,9 @@
             public string WorkType { get; set; }
             public string Description { get; set; }
             public int ApproverUserId { get; set; }
+            public string SupervisorName { get; set; }
+            public DateTime? WorkFrom { get; set; }
+            public DateTime? WorkTo { get; set; }
         }
 
         public struct UpdateAccessRequestRequest

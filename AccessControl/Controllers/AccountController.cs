@@ -92,7 +92,8 @@ namespace AccessControl.Controllers
                 (int)accountId,
                 req.Name,
                 req.Address,
-                req.Reference);
+                req.Reference,
+                req.QrCodeIdentifier);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -121,6 +122,7 @@ namespace AccessControl.Controllers
                 req.Name,
                 req.Address,
                 req.Reference,
+                req.QrCodeIdentifier,
                 req.IsActive);
 
             return JsonConvert.SerializeObject(
@@ -131,11 +133,15 @@ namespace AccessControl.Controllers
 
 
         [HttpPost("getworkareas")]
-        public string GetWorkAreas(TokenOnlyRequest req)
+        public string GetWorkAreas(GetWorkAreasRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
+            int accountId = 0;
+            if (!string.IsNullOrWhiteSpace(req.Token))
+            {
+                accountId = _security.CheckToken(req.Token);
+            }
 
-            if (accountId < 1)
+            if (accountId < 1 && req.SiteId < 1)
             {
                 return JsonConvert.SerializeObject(
                     new GenericResponse()
@@ -145,7 +151,7 @@ namespace AccessControl.Controllers
                     });
             }
 
-            GenericResponse ret = _proc.GetWorkAreas((int)accountId);
+            GenericResponse ret = _proc.GetWorkAreas((int)accountId, req.SiteId);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -452,11 +458,15 @@ namespace AccessControl.Controllers
         // ============================================================
 
         [HttpPost("getrooms")]
-        public string GetRooms(TokenOnlyRequest req)
+        public string GetRooms(GetRoomsRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
+            int accountId = 0;
+            if (!string.IsNullOrWhiteSpace(req.Token))
+            {
+                accountId = _security.CheckToken(req.Token);
+            }
 
-            if (accountId < 1)
+            if (accountId < 1 && req.WorkAreaId < 1 && req.SiteId < 1 && req.Id < 1)
             {
                 return JsonConvert.SerializeObject(
                     new GenericResponse()
@@ -466,7 +476,7 @@ namespace AccessControl.Controllers
                     });
             }
 
-            GenericResponse ret = _proc.GetRooms((int)accountId);
+            GenericResponse ret = _proc.GetRooms((int)accountId, req.WorkAreaId, req.SiteId);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -494,7 +504,8 @@ namespace AccessControl.Controllers
                 req.WorkAreaId,
                 req.RoomNumber,
                 req.Name,
-                req.Description);
+                req.Description,
+                req.LocationKind);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -525,6 +536,7 @@ namespace AccessControl.Controllers
                 req.Name,
                 req.QrCodeIdentifier,
                 req.Description,
+                req.LocationKind,
                 req.IsActive);
 
             return JsonConvert.SerializeObject(
@@ -632,7 +644,7 @@ namespace AccessControl.Controllers
 
             if (accountId < 1)
             {
-                if (req.WorkerId < 1 && req.Id < 1 && req.RoomId < 1)
+                if (req.WorkerId < 1 && req.Id < 1 && req.RoomId < 1 && req.SiteId < 1)
                 {
                     return JsonConvert.SerializeObject(
                         new GenericResponse()
@@ -653,7 +665,8 @@ namespace AccessControl.Controllers
                     req.Status,
                     req.Search,
                     req.Skip,
-                    req.Take);
+                    req.Take,
+                    req.SiteId);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -672,7 +685,10 @@ namespace AccessControl.Controllers
                 req.Reason,
                 req.WorkType,
                 req.Description,
-                req.ApproverUserId);
+                req.ApproverUserId,
+                req.SupervisorName,
+                req.WorkFrom,
+                req.WorkTo);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -1278,6 +1294,34 @@ namespace AccessControl.Controllers
         public string GetManagersForRoom(ManagersForRoomRequest req)
         {
             return JsonConvert.SerializeObject(_proc.GetManagersForRoom(req.RoomId, req.DepartmentId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("getroommanagers")]
+        public string GetRoomManagers(TokenOnlyRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(_proc.GetRoomManagers(accountId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("insertroommanager")]
+        public string InsertRoomManager(InsertRoomManagerRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(
+                _proc.InsertRoomManager(accountId, req.RoomId, req.ManagerUserId, req.IsPrimary),
+                Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("updateroommanager")]
+        public string UpdateRoomManager(UpdateRoomManagerRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(
+                _proc.UpdateRoomManager(accountId, req.Id, req.RoomId, req.ManagerUserId, req.IsPrimary),
+                Newtonsoft.Json.Formatting.Indented);
         }
 
         [HttpPost("getdepartmentsforroom")]

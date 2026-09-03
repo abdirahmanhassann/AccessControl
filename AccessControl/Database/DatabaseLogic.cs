@@ -74,7 +74,8 @@ namespace AccessControl.Database
         public void InsertSite(
             string name,
             string? address,
-            string? reference)
+            string? reference,
+            string? qrCodeIdentifier)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -87,6 +88,9 @@ namespace AccessControl.Database
             sqlParams.Add(
                 _conn.GenerateInputString("@Reference", reference, 100));
 
+            sqlParams.Add(
+                _conn.GenerateInputString("@QrCodeIdentifier", qrCodeIdentifier, 100));
+
             _conn.ExecuteStoredProcedureNoReturn(
                 "SitesInsert",
                 sqlParams.ToArray());
@@ -97,6 +101,7 @@ namespace AccessControl.Database
             string name,
             string? address,
             string? reference,
+            string? qrCodeIdentifier,
             bool isActive)
         {
             List<SqlParameter> sqlParams = new();
@@ -114,10 +119,23 @@ namespace AccessControl.Database
                 _conn.GenerateInputString("@Reference", reference, 100));
 
             sqlParams.Add(
+                _conn.GenerateInputString("@QrCodeIdentifier", qrCodeIdentifier, 100));
+
+            sqlParams.Add(
                 _conn.GenerateInputBool("@IsActive", isActive));
 
             _conn.ExecuteStoredProcedureNoReturn(
                 "SitesUpdate",
+                sqlParams.ToArray());
+        }
+
+        public DataRow GetSiteByQrCode(string qrCodeIdentifier)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(
+                _conn.GenerateInputString("@QrCodeIdentifier", qrCodeIdentifier, 100));
+            return _conn.ExecuteStoredProcedureAsDataRow(
+                "SitesGetByQrCode",
                 sqlParams.ToArray());
         }
 
@@ -126,9 +144,13 @@ namespace AccessControl.Database
         // WORK AREAS
         // ============================================================
 
-        public DataTable GetWorkAreas()
+        public DataTable GetWorkAreas(int siteId = 0)
         {
             List<SqlParameter> sqlParams = new();
+            if (siteId > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@SiteId", siteId));
+            }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "WorkAreasGet",
@@ -488,15 +510,23 @@ namespace AccessControl.Database
         }
 
 
-        public DataTable GetRooms(int? id)
+        public DataTable GetRooms(int? id, int workAreaId = 0, int siteId = 0)
         {
             List<SqlParameter> sqlParams = new();
-            if(id > 0)
+            if (id > 0)
             {
                 sqlParams.Add(
                     _conn.GenerateInputInteger(
                         "@Id",
                         id ?? 0));
+            }
+            if (workAreaId > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@WorkAreaId", workAreaId));
+            }
+            if (siteId > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@SiteId", siteId));
             }
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "RoomsGet",
@@ -507,7 +537,8 @@ namespace AccessControl.Database
             int workAreaId,
             string roomNumber,
             string? name,
-            string? description)
+            string? description,
+            string? locationKind)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -534,6 +565,12 @@ namespace AccessControl.Database
                     description,
                     500));
 
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@LocationKind",
+                    string.IsNullOrWhiteSpace(locationKind) ? "Apartment" : locationKind,
+                    30));
+
             _conn.ExecuteStoredProcedureNoReturn(
                 "RoomsInsert",
                 sqlParams.ToArray());
@@ -546,6 +583,7 @@ namespace AccessControl.Database
             string? name,
             string qrCodeIdentifier,
             string? description,
+            string? locationKind,
             bool isActive)
         {
             List<SqlParameter> sqlParams = new();
@@ -572,15 +610,15 @@ namespace AccessControl.Database
 
             sqlParams.Add(
                 _conn.GenerateInputString(
-                    "@QrCodeIdentifier",
-                    qrCodeIdentifier,
-                    200));
-
-            sqlParams.Add(
-                _conn.GenerateInputString(
                     "@Description",
                     description,
                     500));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@LocationKind",
+                    locationKind,
+                    30));
 
             sqlParams.Add(
                 _conn.GenerateInputBool(
@@ -694,7 +732,8 @@ namespace AccessControl.Database
             string? status,
             string? search,
             int skip,
-            int take)
+            int take,
+            int siteId = 0)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -712,6 +751,11 @@ namespace AccessControl.Database
             {
                 sqlParams.Add(
                     _conn.GenerateInputInteger("@RoomId", roomId));
+            }
+            if (siteId > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@SiteId", siteId));
             }
             if (!string.IsNullOrWhiteSpace(status))
             {
@@ -736,7 +780,16 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public int InsertAccessRequest(string phoneNumber, int workerId, int roomId, string reason, string workType, string? description)
+        public int InsertAccessRequest(
+            string phoneNumber,
+            int workerId,
+            int roomId,
+            string reason,
+            string workType,
+            string? description,
+            string? supervisorName,
+            DateTime? workFrom,
+            DateTime? workTo)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -771,6 +824,21 @@ namespace AccessControl.Database
                     "@Description",
                     description,
                     1000));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@SupervisorName",
+                    supervisorName,
+                    200));
+
+            if (workFrom.HasValue)
+            {
+                sqlParams.Add(_conn.GenerateInputDateTime("@WorkFrom", workFrom.Value));
+            }
+            if (workTo.HasValue)
+            {
+                sqlParams.Add(_conn.GenerateInputDateTime("@WorkTo", workTo.Value));
+            }
 
           return  _conn.ExecuteStoredProcedureAsScalarInt("AccessRequestsInsert", sqlParams.ToArray());
         }
@@ -1759,6 +1827,52 @@ namespace AccessControl.Database
             return _conn.ExecuteStoredProcedureAsScalarInt(
                 "ManagerCanApprove",
                 sqlParams.ToArray()) == 1;
+        }
+
+        public DataTable GetRoomManagers(int roomId = 0)
+        {
+            List<SqlParameter> sqlParams = new();
+            if (roomId > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@RoomId", roomId));
+            }
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "RoomManagersGet",
+                sqlParams.ToArray());
+        }
+
+        public void InsertRoomManager(int roomId, int userId, bool isPrimary)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputInteger("@RoomId", roomId));
+            sqlParams.Add(_conn.GenerateInputInteger("@UserId", userId));
+            sqlParams.Add(_conn.GenerateInputBool("@IsPrimary", isPrimary));
+            _conn.ExecuteStoredProcedureNoReturn(
+                "RoomManagersInsert",
+                sqlParams.ToArray());
+        }
+
+        public void UpdateRoomManager(int id, int roomId, int userId, bool isPrimary)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputInteger("@Id", id));
+            sqlParams.Add(_conn.GenerateInputInteger("@RoomId", roomId));
+            sqlParams.Add(_conn.GenerateInputInteger("@UserId", userId));
+            sqlParams.Add(_conn.GenerateInputBool("@IsPrimary", isPrimary));
+            _conn.ExecuteStoredProcedureNoReturn(
+                "RoomManagersUpdate",
+                sqlParams.ToArray());
+        }
+
+        public DateTime? GetAccessRequestWorkTo(int id)
+        {
+            if (id < 1) return null;
+            DataTable dt = GetAccessRequests(id, 0, 0, null, null, 0, 1);
+            if (dt.Rows.Count == 0 || !dt.Columns.Contains("WorkTo") || dt.Rows[0]["WorkTo"] == DBNull.Value)
+            {
+                return null;
+            }
+            return Convert.ToDateTime(dt.Rows[0]["WorkTo"]);
         }
     }
 }
