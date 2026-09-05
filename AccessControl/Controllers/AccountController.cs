@@ -53,16 +53,10 @@ namespace AccessControl.Controllers
         [HttpPost("getsites")]
         public string GetSites(TokenOnlyRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
-
-            if (accountId < 1)
+            int accountId = 0;
+            if (!string.IsNullOrWhiteSpace(req.Token))
             {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
+                accountId = _security.CheckToken(req.Token);
             }
 
             GenericResponse ret = _proc.GetSites((int)accountId);

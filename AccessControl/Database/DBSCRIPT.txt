@@ -1,94 +1,24 @@
-USE [master]
-GO
-/****** Object:  Database [AccessControl]    Script Date: 29/08/2026 14:04:35 ******/
-CREATE DATABASE [AccessControl]
- CONTAINMENT = NONE
- ON  PRIMARY 
-( NAME = N'AccessControl', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS01\MSSQL\DATA\AccessControl.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
- LOG ON 
-( NAME = N'AccessControl_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS01\MSSQL\DATA\AccessControl_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
- WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
-GO
-ALTER DATABASE [AccessControl] SET COMPATIBILITY_LEVEL = 170
-GO
-IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
-begin
-EXEC [AccessControl].[dbo].[sp_fulltext_database] @action = 'enable'
-end
-GO
-ALTER DATABASE [AccessControl] SET ANSI_NULL_DEFAULT OFF 
-GO
-ALTER DATABASE [AccessControl] SET ANSI_NULLS OFF 
-GO
-ALTER DATABASE [AccessControl] SET ANSI_PADDING OFF 
-GO
-ALTER DATABASE [AccessControl] SET ANSI_WARNINGS OFF 
-GO
-ALTER DATABASE [AccessControl] SET ARITHABORT OFF 
-GO
-ALTER DATABASE [AccessControl] SET AUTO_CLOSE OFF 
-GO
-ALTER DATABASE [AccessControl] SET AUTO_SHRINK OFF 
-GO
-ALTER DATABASE [AccessControl] SET AUTO_UPDATE_STATISTICS ON 
-GO
-ALTER DATABASE [AccessControl] SET CURSOR_CLOSE_ON_COMMIT OFF 
-GO
-ALTER DATABASE [AccessControl] SET CURSOR_DEFAULT  GLOBAL 
-GO
-ALTER DATABASE [AccessControl] SET CONCAT_NULL_YIELDS_NULL OFF 
-GO
-ALTER DATABASE [AccessControl] SET NUMERIC_ROUNDABORT OFF 
-GO
-ALTER DATABASE [AccessControl] SET QUOTED_IDENTIFIER OFF 
-GO
-ALTER DATABASE [AccessControl] SET RECURSIVE_TRIGGERS OFF 
-GO
-ALTER DATABASE [AccessControl] SET  DISABLE_BROKER 
-GO
-ALTER DATABASE [AccessControl] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
-GO
-ALTER DATABASE [AccessControl] SET DATE_CORRELATION_OPTIMIZATION OFF 
-GO
-ALTER DATABASE [AccessControl] SET TRUSTWORTHY OFF 
-GO
-ALTER DATABASE [AccessControl] SET ALLOW_SNAPSHOT_ISOLATION OFF 
-GO
-ALTER DATABASE [AccessControl] SET PARAMETERIZATION SIMPLE 
-GO
-ALTER DATABASE [AccessControl] SET READ_COMMITTED_SNAPSHOT OFF 
-GO
-ALTER DATABASE [AccessControl] SET HONOR_BROKER_PRIORITY OFF 
-GO
-ALTER DATABASE [AccessControl] SET RECOVERY SIMPLE 
-GO
-ALTER DATABASE [AccessControl] SET  MULTI_USER 
-GO
-ALTER DATABASE [AccessControl] SET PAGE_VERIFY CHECKSUM  
-GO
-ALTER DATABASE [AccessControl] SET DB_CHAINING OFF 
-GO
-ALTER DATABASE [AccessControl] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
-GO
-ALTER DATABASE [AccessControl] SET TARGET_RECOVERY_TIME = 60 SECONDS 
-GO
-ALTER DATABASE [AccessControl] SET DELAYED_DURABILITY = DISABLED 
-GO
-ALTER DATABASE [AccessControl] SET ACCELERATED_DATABASE_RECOVERY = OFF  
-GO
-ALTER DATABASE [AccessControl] SET OPTIMIZED_LOCKING = OFF 
-GO
-ALTER DATABASE [AccessControl] SET QUERY_STORE = ON
-GO
-ALTER DATABASE [AccessControl] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
-GO
 USE [AccessControl]
 GO
+/* Idempotent schema script.
+   SQL Server has no CREATE OR ALTER for databases or tables.
+   This script assumes the AccessControl database already exists.
+   Tables, indexes, and constraints are created only if they are missing.
+   Procedures use CREATE OR ALTER. Safe to re-run against a live database.
+*/
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
 /****** Object:  Table [dbo].[AccessPhotos]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[AccessPhotos]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[AccessPhotos](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[AccessRequestId] [int] NOT NULL,
@@ -105,12 +35,15 @@ CREATE TABLE [dbo].[AccessPhotos](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[AccessRequestApprovals]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[AccessRequestApprovals]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[AccessRequestApprovals](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[AccessRequestId] [int] NOT NULL,
@@ -123,12 +56,15 @@ CREATE TABLE [dbo].[AccessRequestApprovals](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[AccessRequests]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[AccessRequests]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[AccessRequests](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[WorkerId] [int] NULL,
@@ -150,12 +86,15 @@ CREATE TABLE [dbo].[AccessRequests](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[AccessWindows]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[AccessWindows]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[AccessWindows](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[WorkAreaId] [int] NOT NULL,
@@ -168,12 +107,15 @@ CREATE TABLE [dbo].[AccessWindows](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[AuditEvents]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[AuditEvents]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[AuditEvents](
 	[Id] [bigint] IDENTITY(1,1) NOT NULL,
 	[AccessRequestId] [int] NULL,
@@ -189,12 +131,15 @@ CREATE TABLE [dbo].[AuditEvents](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[ErrorLog]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[ErrorLog]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[ErrorLog](
 	[Id] [bigint] IDENTITY(1,1) NOT NULL,
 	[Location] [nvarchar](512) NOT NULL,
@@ -202,12 +147,15 @@ CREATE TABLE [dbo].[ErrorLog](
 	[AccountId] [bigint] NOT NULL,
 	[DateStamp] [datetime] NOT NULL
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[Notifications]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[Notifications]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[Notifications](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[UserId] [int] NULL,
@@ -225,12 +173,15 @@ CREATE TABLE [dbo].[Notifications](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[OTPVerifications]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[OTPVerifications]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[OTPVerifications](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[WorkerId] [int] NULL,
@@ -245,12 +196,15 @@ CREATE TABLE [dbo].[OTPVerifications](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[Rooms]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[Rooms]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[Rooms](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[WorkAreaId] [int] NOT NULL,
@@ -274,12 +228,15 @@ CREATE TABLE [dbo].[Rooms](
 	[RoomNumber] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[Sites]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[Sites]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[Sites](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Name] [nvarchar](200) NOT NULL,
@@ -296,24 +253,30 @@ CREATE TABLE [dbo].[Sites](
 	[Reference] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[Token]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[Token]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[Token](
 	[Id] [bigint] IDENTITY(1,1) NOT NULL,
 	[AccountId] [bigint] NOT NULL,
 	[Token] [nvarchar](50) NOT NULL,
 	[ValidTo] [datetime] NOT NULL
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[Users]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[Users](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[FirstName] [nvarchar](100) NOT NULL,
@@ -336,12 +299,15 @@ CREATE TABLE [dbo].[Users](
 	[Email] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[WorkAreaManagers]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[WorkAreaManagers]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[WorkAreaManagers](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[WorkAreaId] [int] NOT NULL,
@@ -358,12 +324,15 @@ CREATE TABLE [dbo].[WorkAreaManagers](
 	[UserId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[WorkAreas]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[WorkAreas]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[WorkAreas](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[SiteId] [int] NOT NULL,
@@ -381,12 +350,15 @@ CREATE TABLE [dbo].[WorkAreas](
 	[Name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
 /****** Object:  Table [dbo].[Workers]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF OBJECT_ID(N'[dbo].[Workers]', N'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[Workers](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[FirstName] [nvarchar](100) NOT NULL,
@@ -401,19 +373,37 @@ CREATE TABLE [dbo].[Workers](
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_AccessPhotos_Request' AND object_id = OBJECT_ID(N'[dbo].[AccessPhotos]')
+)
+BEGIN
 /****** Object:  Index [IX_AccessPhotos_Request]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessPhotos_Request] ON [dbo].[AccessPhotos]
 (
 	[AccessRequestId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_AccessRequestApprovals_Request' AND object_id = OBJECT_ID(N'[dbo].[AccessRequestApprovals]')
+)
+BEGIN
 /****** Object:  Index [IX_AccessRequestApprovals_Request]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequestApprovals_Request] ON [dbo].[AccessRequestApprovals]
 (
 	[AccessRequestId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_AccessRequests_Active' AND object_id = OBJECT_ID(N'[dbo].[AccessRequests]')
+)
+BEGIN
 /****** Object:  Index [IX_AccessRequests_Active]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_Active] ON [dbo].[AccessRequests]
 (
@@ -421,214 +411,401 @@ CREATE NONCLUSTERED INDEX [IX_AccessRequests_Active] ON [dbo].[AccessRequests]
 )
 WHERE ([ClockedInAt] IS NOT NULL AND [ClockedOutAt] IS NULL)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_AccessRequests_RoomId' AND object_id = OBJECT_ID(N'[dbo].[AccessRequests]')
+)
+BEGIN
 /****** Object:  Index [IX_AccessRequests_RoomId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_RoomId] ON [dbo].[AccessRequests]
 (
 	[RoomId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
 SET ANSI_PADDING ON
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_AccessRequests_Status' AND object_id = OBJECT_ID(N'[dbo].[AccessRequests]')
+)
+BEGIN
 /****** Object:  Index [IX_AccessRequests_Status]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_Status] ON [dbo].[AccessRequests]
 (
 	[Status] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_AccessRequests_WorkerId' AND object_id = OBJECT_ID(N'[dbo].[AccessRequests]')
+)
+BEGIN
 /****** Object:  Index [IX_AccessRequests_WorkerId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AccessRequests_WorkerId] ON [dbo].[AccessRequests]
 (
 	[WorkerId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_AuditEvents_Request' AND object_id = OBJECT_ID(N'[dbo].[AuditEvents]')
+)
+BEGIN
 /****** Object:  Index [IX_AuditEvents_Request]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_AuditEvents_Request] ON [dbo].[AuditEvents]
 (
 	[AccessRequestId] ASC,
 	[CreatedAt] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_Rooms_WorkAreaId' AND object_id = OBJECT_ID(N'[dbo].[Rooms]')
+)
+BEGIN
 /****** Object:  Index [IX_Rooms_WorkAreaId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_Rooms_WorkAreaId] ON [dbo].[Rooms]
 (
 	[WorkAreaId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_WorkAreaManagers_UserId' AND object_id = OBJECT_ID(N'[dbo].[WorkAreaManagers]')
+)
+BEGIN
 /****** Object:  Index [IX_WorkAreaManagers_UserId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_WorkAreaManagers_UserId] ON [dbo].[WorkAreaManagers]
 (
 	[UserId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_WorkAreaManagers_WorkAreaId' AND object_id = OBJECT_ID(N'[dbo].[WorkAreaManagers]')
+)
+BEGIN
 /****** Object:  Index [IX_WorkAreaManagers_WorkAreaId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_WorkAreaManagers_WorkAreaId] ON [dbo].[WorkAreaManagers]
 (
 	[WorkAreaId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_WorkAreas_SiteId' AND object_id = OBJECT_ID(N'[dbo].[WorkAreas]')
+)
+BEGIN
 /****** Object:  Index [IX_WorkAreas_SiteId]    Script Date: 29/08/2026 14:04:35 ******/
 CREATE NONCLUSTERED INDEX [IX_WorkAreas_SiteId] ON [dbo].[WorkAreas]
 (
 	[SiteId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_AccessPhotos_UploadedAt')
+BEGIN
 ALTER TABLE [dbo].[AccessPhotos] ADD  CONSTRAINT [DF_AccessPhotos_UploadedAt]  DEFAULT (sysutcdatetime()) FOR [UploadedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_AccessRequests_Status')
+BEGIN
 ALTER TABLE [dbo].[AccessRequests] ADD  CONSTRAINT [DF_AccessRequests_Status]  DEFAULT ('PENDING') FOR [Status]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_AccessRequests_RequestedAt')
+BEGIN
 ALTER TABLE [dbo].[AccessRequests] ADD  CONSTRAINT [DF_AccessRequests_RequestedAt]  DEFAULT (sysutcdatetime()) FOR [RequestedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_AccessWindows_IsActive')
+BEGIN
 ALTER TABLE [dbo].[AccessWindows] ADD  CONSTRAINT [DF_AccessWindows_IsActive]  DEFAULT ((1)) FOR [IsActive]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_AuditEvents_CreatedAt')
+BEGIN
 ALTER TABLE [dbo].[AuditEvents] ADD  CONSTRAINT [DF_AuditEvents_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Notifications_Status')
+BEGIN
 ALTER TABLE [dbo].[Notifications] ADD  CONSTRAINT [DF_Notifications_Status]  DEFAULT ('PENDING') FOR [Status]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Notifications_CreatedAt')
+BEGIN
 ALTER TABLE [dbo].[Notifications] ADD  CONSTRAINT [DF_Notifications_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_OTPVerifications_AttemptCount')
+BEGIN
 ALTER TABLE [dbo].[OTPVerifications] ADD  CONSTRAINT [DF_OTPVerifications_AttemptCount]  DEFAULT ((0)) FOR [AttemptCount]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Rooms_QrCodeIdentifier')
+BEGIN
 ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_QrCodeIdentifier]  DEFAULT (newsequentialid()) FOR [QrCodeIdentifier]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Rooms_IsActive')
+BEGIN
 ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_IsActive]  DEFAULT ((1)) FOR [IsActive]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Rooms_CreatedAt')
+BEGIN
 ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Sites_IsActive')
+BEGIN
 ALTER TABLE [dbo].[Sites] ADD  CONSTRAINT [DF_Sites_IsActive]  DEFAULT ((1)) FOR [IsActive]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Users_IsActive')
+BEGIN
 ALTER TABLE [dbo].[Users] ADD  CONSTRAINT [DF_Users_IsActive]  DEFAULT ((1)) FOR [IsActive]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Users_CreatedAt')
+BEGIN
 ALTER TABLE [dbo].[Users] ADD  CONSTRAINT [DF_Users_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Users_isDeleted')
+BEGIN
 ALTER TABLE [dbo].[Users] ADD  CONSTRAINT [DF_Users_isDeleted]  DEFAULT ((0)) FOR [isDeleted]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_WorkAreaManagers_IsPrimary')
+BEGIN
 ALTER TABLE [dbo].[WorkAreaManagers] ADD  CONSTRAINT [DF_WorkAreaManagers_IsPrimary]  DEFAULT ((0)) FOR [IsPrimary]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_WorkAreaManagers_AssignedAt')
+BEGIN
 ALTER TABLE [dbo].[WorkAreaManagers] ADD  CONSTRAINT [DF_WorkAreaManagers_AssignedAt]  DEFAULT (sysutcdatetime()) FOR [AssignedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_WorkAreas_IsActive')
+BEGIN
 ALTER TABLE [dbo].[WorkAreas] ADD  CONSTRAINT [DF_WorkAreas_IsActive]  DEFAULT ((1)) FOR [IsActive]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_WorkAreas_CreatedAt')
+BEGIN
 ALTER TABLE [dbo].[WorkAreas] ADD  CONSTRAINT [DF_WorkAreas_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Workers_IsActive')
+BEGIN
 ALTER TABLE [dbo].[Workers] ADD  CONSTRAINT [DF_Workers_IsActive]  DEFAULT ((1)) FOR [IsActive]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Workers_CreatedAt')
+BEGIN
 ALTER TABLE [dbo].[Workers] ADD  CONSTRAINT [DF_Workers_CreatedAt]  DEFAULT (getdate()) FOR [CreatedAt]
+END
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AccessPhotos_AccessRequests')
+BEGIN
 ALTER TABLE [dbo].[AccessPhotos]  WITH CHECK ADD  CONSTRAINT [FK_AccessPhotos_AccessRequests] FOREIGN KEY([AccessRequestId])
 REFERENCES [dbo].[AccessRequests] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AccessPhotos] CHECK CONSTRAINT [FK_AccessPhotos_AccessRequests]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AccessPhotos_Workers')
+BEGIN
 ALTER TABLE [dbo].[AccessPhotos]  WITH CHECK ADD  CONSTRAINT [FK_AccessPhotos_Workers] FOREIGN KEY([UploadedByWorkerId])
 REFERENCES [dbo].[Workers] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AccessPhotos] CHECK CONSTRAINT [FK_AccessPhotos_Workers]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AccessRequestApprovals_AccessRequests')
+BEGIN
 ALTER TABLE [dbo].[AccessRequestApprovals]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequestApprovals_AccessRequests] FOREIGN KEY([AccessRequestId])
 REFERENCES [dbo].[AccessRequests] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AccessRequestApprovals] CHECK CONSTRAINT [FK_AccessRequestApprovals_AccessRequests]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AccessRequestApprovals_Users')
+BEGIN
 ALTER TABLE [dbo].[AccessRequestApprovals]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequestApprovals_Users] FOREIGN KEY([ApproverUserId])
 REFERENCES [dbo].[Users] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AccessRequestApprovals] CHECK CONSTRAINT [FK_AccessRequestApprovals_Users]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AccessRequests_Rooms')
+BEGIN
 ALTER TABLE [dbo].[AccessRequests]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequests_Rooms] FOREIGN KEY([RoomId])
 REFERENCES [dbo].[Rooms] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AccessRequests] CHECK CONSTRAINT [FK_AccessRequests_Rooms]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AccessRequests_Workers')
+BEGIN
 ALTER TABLE [dbo].[AccessRequests]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequests_Workers] FOREIGN KEY([WorkerId])
 REFERENCES [dbo].[Workers] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AccessRequests] CHECK CONSTRAINT [FK_AccessRequests_Workers]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AccessWindows_WorkAreas')
+BEGIN
 ALTER TABLE [dbo].[AccessWindows]  WITH CHECK ADD  CONSTRAINT [FK_AccessWindows_WorkAreas] FOREIGN KEY([WorkAreaId])
 REFERENCES [dbo].[WorkAreas] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AccessWindows] CHECK CONSTRAINT [FK_AccessWindows_WorkAreas]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AuditEvents_AccessRequests')
+BEGIN
 ALTER TABLE [dbo].[AuditEvents]  WITH CHECK ADD  CONSTRAINT [FK_AuditEvents_AccessRequests] FOREIGN KEY([AccessRequestId])
 REFERENCES [dbo].[AccessRequests] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AuditEvents] CHECK CONSTRAINT [FK_AuditEvents_AccessRequests]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AuditEvents_Users')
+BEGIN
 ALTER TABLE [dbo].[AuditEvents]  WITH CHECK ADD  CONSTRAINT [FK_AuditEvents_Users] FOREIGN KEY([UserId])
 REFERENCES [dbo].[Users] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AuditEvents] CHECK CONSTRAINT [FK_AuditEvents_Users]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_AuditEvents_Workers')
+BEGIN
 ALTER TABLE [dbo].[AuditEvents]  WITH CHECK ADD  CONSTRAINT [FK_AuditEvents_Workers] FOREIGN KEY([WorkerId])
 REFERENCES [dbo].[Workers] ([Id])
+END
 GO
 ALTER TABLE [dbo].[AuditEvents] CHECK CONSTRAINT [FK_AuditEvents_Workers]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_Notifications_AccessRequests')
+BEGIN
 ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [FK_Notifications_AccessRequests] FOREIGN KEY([AccessRequestId])
 REFERENCES [dbo].[AccessRequests] ([Id])
+END
 GO
 ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [FK_Notifications_AccessRequests]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_Notifications_Users')
+BEGIN
 ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [FK_Notifications_Users] FOREIGN KEY([UserId])
 REFERENCES [dbo].[Users] ([Id])
+END
 GO
 ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [FK_Notifications_Users]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_Notifications_Workers')
+BEGIN
 ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [FK_Notifications_Workers] FOREIGN KEY([WorkerId])
 REFERENCES [dbo].[Workers] ([Id])
+END
 GO
 ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [FK_Notifications_Workers]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_OTPVerifications_Workers')
+BEGIN
 ALTER TABLE [dbo].[OTPVerifications]  WITH CHECK ADD  CONSTRAINT [FK_OTPVerifications_Workers] FOREIGN KEY([WorkerId])
 REFERENCES [dbo].[Workers] ([Id])
+END
 GO
 ALTER TABLE [dbo].[OTPVerifications] CHECK CONSTRAINT [FK_OTPVerifications_Workers]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_WorkAreaManagers_Users')
+BEGIN
 ALTER TABLE [dbo].[WorkAreaManagers]  WITH CHECK ADD  CONSTRAINT [FK_WorkAreaManagers_Users] FOREIGN KEY([UserId])
 REFERENCES [dbo].[Users] ([Id])
+END
 GO
 ALTER TABLE [dbo].[WorkAreaManagers] CHECK CONSTRAINT [FK_WorkAreaManagers_Users]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_WorkAreaManagers_WorkAreas')
+BEGIN
 ALTER TABLE [dbo].[WorkAreaManagers]  WITH CHECK ADD  CONSTRAINT [FK_WorkAreaManagers_WorkAreas] FOREIGN KEY([WorkAreaId])
 REFERENCES [dbo].[WorkAreas] ([Id])
+END
 GO
 ALTER TABLE [dbo].[WorkAreaManagers] CHECK CONSTRAINT [FK_WorkAreaManagers_WorkAreas]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'FK_WorkAreas_Sites')
+BEGIN
 ALTER TABLE [dbo].[WorkAreas]  WITH CHECK ADD  CONSTRAINT [FK_WorkAreas_Sites] FOREIGN KEY([SiteId])
 REFERENCES [dbo].[Sites] ([Id])
+END
 GO
 ALTER TABLE [dbo].[WorkAreas] CHECK CONSTRAINT [FK_WorkAreas_Sites]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_AccessPhotos_PhotoType')
+BEGIN
 ALTER TABLE [dbo].[AccessPhotos]  WITH CHECK ADD  CONSTRAINT [CK_AccessPhotos_PhotoType] CHECK  (([PhotoType]='OTHER' OR [PhotoType]='AFTER_WORK' OR [PhotoType]='DURING_WORK' OR [PhotoType]='BEFORE_WORK' OR [PhotoType]='CLOSE_OUT'))
+END
 GO
 ALTER TABLE [dbo].[AccessPhotos] CHECK CONSTRAINT [CK_AccessPhotos_PhotoType]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_AccessRequestApprovals_Status')
+BEGIN
 ALTER TABLE [dbo].[AccessRequestApprovals]  WITH CHECK ADD  CONSTRAINT [CK_AccessRequestApprovals_Status] CHECK  (([Status]='REJECTED' OR [Status]='APPROVED' OR [Status]='PENDING'))
+END
 GO
 ALTER TABLE [dbo].[AccessRequestApprovals] CHECK CONSTRAINT [CK_AccessRequestApprovals_Status]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_AccessRequests_Status')
+BEGIN
 ALTER TABLE [dbo].[AccessRequests]  WITH CHECK ADD  CONSTRAINT [CK_AccessRequests_Status] CHECK  (([Status]='CANCELLED' OR [Status]='COMPLETED' OR [Status]='ACTIVE' OR [Status]='REJECTED' OR [Status]='APPROVED' OR [Status]='PENDING'))
+END
 GO
 ALTER TABLE [dbo].[AccessRequests] CHECK CONSTRAINT [CK_AccessRequests_Status]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_AccessWindows_DayOfWeek')
+BEGIN
 ALTER TABLE [dbo].[AccessWindows]  WITH CHECK ADD  CONSTRAINT [CK_AccessWindows_DayOfWeek] CHECK  (([DayOfWeek]>=(1) AND [DayOfWeek]<=(7)))
+END
 GO
 ALTER TABLE [dbo].[AccessWindows] CHECK CONSTRAINT [CK_AccessWindows_DayOfWeek]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_AccessWindows_Time')
+BEGIN
 ALTER TABLE [dbo].[AccessWindows]  WITH CHECK ADD  CONSTRAINT [CK_AccessWindows_Time] CHECK  (([StartTime]<[EndTime]))
+END
 GO
 ALTER TABLE [dbo].[AccessWindows] CHECK CONSTRAINT [CK_AccessWindows_Time]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_Notifications_Channel')
+BEGIN
 ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [CK_Notifications_Channel] CHECK  (([Channel]='IN_APP' OR [Channel]='EMAIL' OR [Channel]='SMS'))
+END
 GO
 ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [CK_Notifications_Channel]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_Notifications_Status')
+BEGIN
 ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [CK_Notifications_Status] CHECK  (([Status]='READ' OR [Status]='FAILED' OR [Status]='SENT' OR [Status]='PENDING'))
+END
 GO
 ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [CK_Notifications_Status]
 GO
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'CK_Users_Role')
+BEGIN
 ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CK_Users_Role] CHECK  (([Role]='Admin' OR [Role]='Manager' OR [Role]='Worker'))
+END
 GO
 ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CK_Users_Role]
 GO
@@ -637,8 +814,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[AccessPhotosGet]
+CREATE OR ALTER PROCEDURE [dbo].[AccessPhotosGet]
     @Id INT = NULL,
     @AccessRequestId INT = NULL
 AS
@@ -667,9 +843,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AccessPhotosInsert]
+CREATE OR ALTER PROCEDURE [dbo].[AccessPhotosInsert]
     @AccessRequestId INT,
     @StoragePath NVARCHAR(1000),
     @OriginalFileName NVARCHAR(255) = NULL,
@@ -713,9 +887,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AccessPhotosUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[AccessPhotosUpdate]
     @Id INT,
     @StoragePath NVARCHAR(1000),
     @OriginalFileName NVARCHAR(255) = NULL,
@@ -745,8 +917,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AccessRequestApprovalsGet]
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestApprovalsGet]
     @Id INT = NULL,
     @AccessRequestId INT = NULL,
     @ApproverUserId INT = NULL
@@ -786,9 +957,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AccessRequestApprovalsInsert]
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestApprovalsInsert]
     @AccessRequestId INT,
     @ApproverUserId INT
 AS
@@ -816,9 +985,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AccessRequestApprovalsUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestApprovalsUpdate]
     @Id INT,
     @Status NVARCHAR(30),
     @Comment NVARCHAR(1000) = NULL
@@ -841,8 +1008,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[AccessRequestsGet]
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestsGet]
     @Id INT = NULL,
     @WorkerId INT = NULL,
     @RoomId INT = NULL,
@@ -903,9 +1069,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE PROCEDURE [dbo].[AccessRequestsInsert]
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestsInsert]
     @WorkerId INT = NULL,
     @PhoneNumber nvarchar (30),
     @RoomId INT,
@@ -943,9 +1107,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AccessRequestsUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestsUpdate]
     @Id INT,
     @Status NVARCHAR(30),
     @Reason NVARCHAR(500) = NULL,
@@ -983,8 +1145,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[AccessWindowsGet]
+CREATE OR ALTER PROCEDURE [dbo].[AccessWindowsGet]
     @Id INT = NULL,
     @WorkAreaId INT = NULL
 AS
@@ -1012,9 +1173,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AccessWindowsInsert]
+CREATE OR ALTER PROCEDURE [dbo].[AccessWindowsInsert]
     @WorkAreaId INT,
     @DayOfWeek TINYINT,
     @StartTime TIME(0),
@@ -1046,9 +1205,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AccessWindowsUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[AccessWindowsUpdate]
     @Id INT,
     @WorkAreaId INT,
     @DayOfWeek TINYINT,
@@ -1076,10 +1233,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-CREATE PROCEDURE [dbo].[AddAccessToken]
+CREATE OR ALTER PROCEDURE [dbo].[AddAccessToken]
 	@AccountId bigint,
 	@Token nvarchar(50)
 AS
@@ -1093,11 +1247,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-
-CREATE   PROCEDURE [dbo].[AuditEventsGet]
+CREATE OR ALTER PROCEDURE [dbo].[AuditEventsGet]
     @Id BIGINT = NULL,
     @AccessRequestId INT = NULL,
     @WorkerId INT = NULL,
@@ -1131,9 +1281,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[AuditEventsInsert]
+CREATE OR ALTER PROCEDURE [dbo].[AuditEventsInsert]
     @AccessRequestId INT = NULL,
     @WorkerId INT = NULL,
     @UserId INT = NULL,
@@ -1174,10 +1322,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-CREATE PROCEDURE [dbo].[CheckToken]
+CREATE OR ALTER PROCEDURE [dbo].[CheckToken]
 	@Token nvarchar(50)
 AS
 BEGIN
@@ -1189,8 +1334,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CreateUser]
+CREATE OR ALTER PROCEDURE [dbo].[CreateUser]
 	@Email nvarchar(255),
 	@FirstName nvarchar(100),
 	@LastName nvarchar(100),
@@ -1238,10 +1382,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-CREATE PROCEDURE [dbo].[ExtendAccessToken]
+CREATE OR ALTER PROCEDURE [dbo].[ExtendAccessToken]
 	@Token nvarchar(50)
 AS
 BEGIN
@@ -1253,8 +1394,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetUserByEmail]
+CREATE OR ALTER PROCEDURE [dbo].[GetUserByEmail]
 	@Email nvarchar(255)
 AS
 BEGIN
@@ -1266,10 +1406,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-
-CREATE PROCEDURE [dbo].[LogError]
+CREATE OR ALTER PROCEDURE [dbo].[LogError]
 	@SourceLocation nvarchar(512),
 	@ErrorMessage nvarchar(4000),
 	@AccountId bigint
@@ -1283,8 +1420,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[NotificationsGet]
+CREATE OR ALTER PROCEDURE [dbo].[NotificationsGet]
     @Id INT = NULL,
     @UserId INT = NULL,
     @WorkerId INT = NULL,
@@ -1320,9 +1456,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[NotificationsInsert]
+CREATE OR ALTER PROCEDURE [dbo].[NotificationsInsert]
     @UserId INT = NULL,
     @WorkerId INT = NULL,
     @AccessRequestId INT = NULL,
@@ -1360,9 +1494,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[NotificationsUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[NotificationsUpdate]
     @Id INT,
     @Status NVARCHAR(30),
     @SentAt DATETIME2(0) = NULL,
@@ -1386,8 +1518,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[OTPVerificationsGet]
+CREATE OR ALTER PROCEDURE [dbo].[OTPVerificationsGet]
     @Id INT = NULL,
     @WorkerId INT = NULL,
     @PhoneNumber NVARCHAR(30)
@@ -1414,9 +1545,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[OTPVerificationsInsert]
+CREATE OR ALTER PROCEDURE [dbo].[OTPVerificationsInsert]
     @PhoneNumber NVARCHAR(30),
     @CodeHash INT,
     @ExpiresAt DATETIME2(0)
@@ -1441,17 +1570,13 @@ BEGIN
 
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
 END;
-
-
 GO
 /****** Object:  StoredProcedure [dbo].[OTPVerificationsUpdate]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[OTPVerificationsUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[OTPVerificationsUpdate]
     @Id INT,
     @VerifiedAt DATETIME2(0) = NULL,
     @AttemptCount TINYINT
@@ -1473,8 +1598,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[OTPVerify]
+CREATE OR ALTER PROCEDURE [dbo].[OTPVerify]
     @Code int
 AS
 BEGIN
@@ -1498,8 +1622,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[RoomsGet]
+CREATE OR ALTER PROCEDURE [dbo].[RoomsGet]
     @Id INT = NULL,
     @WorkAreaId INT = NULL,
     @QrCodeIdentifier UNIQUEIDENTIFIER = NULL
@@ -1534,7 +1657,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RoomsGetByAccessRequestId]
+CREATE OR ALTER PROCEDURE [dbo].[RoomsGetByAccessRequestId]
     @AccessRequestId int
 AS
 BEGIN
@@ -1568,7 +1691,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE   PROCEDURE [dbo].[RoomsGetByQrCode]
+CREATE OR ALTER PROCEDURE [dbo].[RoomsGetByQrCode]
     @QrCodeIdentifier VARCHAR(100)
 AS
 BEGIN
@@ -1609,9 +1732,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[RoomsInsert]
+CREATE OR ALTER PROCEDURE [dbo].[RoomsInsert]
     @WorkAreaId INT,
     @RoomNumber NVARCHAR(100),
     @Name NVARCHAR(200) = NULL,
@@ -1649,9 +1770,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[RoomsUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[RoomsUpdate]
     @Id INT,
     @WorkAreaId INT,
     @RoomNumber NVARCHAR(100),
@@ -1679,7 +1798,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE   PROCEDURE [dbo].[SitesGet]
+CREATE OR ALTER PROCEDURE [dbo].[SitesGet]
     @Id INT = NULL
 AS
 BEGIN
@@ -1702,9 +1821,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[SitesInsert]
+CREATE OR ALTER PROCEDURE [dbo].[SitesInsert]
     @Name NVARCHAR(200),
     @Address NVARCHAR(500) = NULL,
     @Reference NVARCHAR(100) = NULL
@@ -1735,9 +1852,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[SitesUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[SitesUpdate]
     @Id INT,
     @Name NVARCHAR(200),
     @Address NVARCHAR(500) = NULL,
@@ -1763,9 +1878,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[UsersGet]
+CREATE OR ALTER PROCEDURE [dbo].[UsersGet]
     @Id INT = NULL
 AS
 BEGIN
@@ -1791,9 +1904,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[UsersInsert]
+CREATE OR ALTER PROCEDURE [dbo].[UsersInsert]
     @FirstName NVARCHAR(100),
     @LastName NVARCHAR(100),
     @Email NVARCHAR(255),
@@ -1828,9 +1939,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[UsersUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[UsersUpdate]
     @Id INT,
     @FirstName NVARCHAR(100),
     @LastName NVARCHAR(100),
@@ -1860,8 +1969,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[WorkAreaManagersGet]
+CREATE OR ALTER PROCEDURE [dbo].[WorkAreaManagersGet]
     @Id INT = NULL,
     @WorkAreaId INT = NULL,
     @UserId INT = NULL
@@ -1896,9 +2004,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[WorkAreaManagersInsert]
+CREATE OR ALTER PROCEDURE [dbo].[WorkAreaManagersInsert]
     @WorkAreaId INT,
     @UserId INT,
     @IsPrimary BIT = 0
@@ -1927,9 +2033,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[WorkAreaManagersUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[WorkAreaManagersUpdate]
     @Id INT,
     @WorkAreaId INT,
     @UserId INT,
@@ -1953,8 +2057,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[WorkAreasGet]
+CREATE OR ALTER PROCEDURE [dbo].[WorkAreasGet]
     @Id INT = NULL,
     @SiteId INT = NULL
 AS
@@ -1982,9 +2085,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[WorkAreasInsert]
+CREATE OR ALTER PROCEDURE [dbo].[WorkAreasInsert]
     @SiteId INT,
     @Name NVARCHAR(200),
     @Description NVARCHAR(500) = NULL
@@ -2013,9 +2114,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[WorkAreasUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[WorkAreasUpdate]
     @Id INT,
     @SiteId INT,
     @Name NVARCHAR(200),
@@ -2041,8 +2140,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   PROCEDURE [dbo].[WorkersGet]
+CREATE OR ALTER PROCEDURE [dbo].[WorkersGet]
     @Id INT = NULL,
     @PhoneNumber NVARCHAR(30) = NULL
 AS
@@ -2069,9 +2167,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[WorkersInsert]
+CREATE OR ALTER PROCEDURE [dbo].[WorkersInsert]
     @FirstName NVARCHAR(100),
     @LastName NVARCHAR(100),
     @PhoneNumber NVARCHAR(30),
@@ -2111,9 +2207,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE   PROCEDURE [dbo].[WorkersUpdate]
+CREATE OR ALTER PROCEDURE [dbo].[WorkersUpdate]
     @Id INT,
     @FirstName NVARCHAR(100),
     @LastName NVARCHAR(100),
