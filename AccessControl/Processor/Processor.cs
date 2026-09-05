@@ -1479,11 +1479,11 @@ namespace AccessControl.Processor
         // DEPARTMENTS
         // ============================================================
 
-        public GenericResponse GetDepartments(int userId)
+        public GenericResponse GetDepartments(int userId, int siteId = 0)
         {
             try
             {
-                DataTable dt = _db.GetDepartments();
+                DataTable dt = _db.GetDepartments(siteId);
 
                 return CreateSuccessResponseWithData(dt);
             }

@@ -1187,11 +1187,24 @@ namespace AccessControl.Controllers
         }
 
         [HttpPost("getdepartments")]
-        public string GetDepartments(TokenOnlyRequest req)
+        public string GetDepartments(GetDepartmentsRequest req)
         {
-            string? err = Guard(req.Token, out int accountId);
-            if (err != null) return err;
-            return JsonConvert.SerializeObject(_proc.GetDepartments(accountId), Newtonsoft.Json.Formatting.Indented);
+            int accountId = 0;
+            if (!string.IsNullOrWhiteSpace(req.Token))
+            {
+                accountId = _security.CheckToken(req.Token);
+            }
+
+            if (accountId < 1 && req.SiteId < 1)
+            {
+                return JsonConvert.SerializeObject(new GenericResponse
+                {
+                    Result = false,
+                    ErrorMessage = TOKEN_ERROR
+                });
+            }
+
+            return JsonConvert.SerializeObject(_proc.GetDepartments(accountId, req.SiteId), Newtonsoft.Json.Formatting.Indented);
         }
 
         [HttpPost("insertdepartment")]

@@ -1523,9 +1523,14 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public DataTable GetDepartments()
+        public DataTable GetDepartments(int siteId = 0)
         {
             List<SqlParameter> sqlParams = new();
+
+            if (siteId > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@SiteId", siteId));
+            }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "DepartmentsGet",

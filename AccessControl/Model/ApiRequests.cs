@@ -105,6 +105,12 @@
             public int SiteId { get; set; }
         }
 
+        public struct GetDepartmentsRequest
+        {
+            public string? Token { get; set; }
+            public int SiteId { get; set; }
+        }
+
         public struct ScanQrCodeRequest
         {
             public string QrCodeIdentifier { get; set; }
