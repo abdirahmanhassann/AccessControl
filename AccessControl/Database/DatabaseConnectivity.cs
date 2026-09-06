@@ -1,5 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 namespace AccessControl.Database
 {
@@ -8,6 +10,8 @@ namespace AccessControl.Database
 
         private SqlConnection _sqlConnection;
         private bool _keepAlive;
+        private readonly Dictionary<string, HashSet<string>> _procedureParameters = new(StringComparer.OrdinalIgnoreCase);
+        private readonly object _procedureParametersLock = new();
         public DatabaseConnectivity(string connectionString, bool keepAlive = false)
         {
             _sqlConnection = new SqlConnection(connectionString);
@@ -21,6 +25,72 @@ namespace AccessControl.Database
         public void CloseConnection()
         {
             _sqlConnection?.Close();
+        }
+
+        private SqlParameter[] BindableParameters(string spName, SqlParameter[]? sqlParams)
+        {
+            if (sqlParams == null || sqlParams.Length == 0)
+            {
+                return Array.Empty<SqlParameter>();
+            }
+            HashSet<string>? allowed = LoadProcedureParameters(spName);
+            if (allowed == null || allowed.Count == 0)
+            {
+                return sqlParams;
+            }
+            return sqlParams.Where(p => allowed.Contains(p.ParameterName)).ToArray();
+        }
+
+        private HashSet<string>? LoadProcedureParameters(string spName)
+        {
+            lock (_procedureParametersLock)
+            {
+                if (_procedureParameters.TryGetValue(spName, out HashSet<string>? cached))
+                {
+                    return cached;
+                }
+            }
+
+            bool openedHere = false;
+            try
+            {
+                if (_sqlConnection.State != ConnectionState.Open)
+                {
+                    _sqlConnection.Open();
+                    openedHere = true;
+                }
+                using SqlCommand cmd = new(
+                    "SELECT [name] FROM sys.parameters WHERE [object_id] = OBJECT_ID(@n)",
+                    _sqlConnection);
+                cmd.Parameters.AddWithValue("@n", spName.Contains('.') ? spName : "dbo." + spName);
+                HashSet<string> names = new(StringComparer.OrdinalIgnoreCase);
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        if (!reader.IsDBNull(0))
+                        {
+                            names.Add(reader.GetString(0));
+                        }
+                    }
+                }
+                lock (_procedureParametersLock)
+                {
+                    _procedureParameters[spName] = names;
+                }
+                return names;
+            }
+            catch
+            {
+                return null;
+            }
+            finally
+            {
+                if (openedHere && !_keepAlive && _sqlConnection.State == ConnectionState.Open)
+                {
+                    _sqlConnection.Close();
+                }
+            }
         }
 
 
@@ -147,7 +217,7 @@ namespace AccessControl.Database
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 if (sqlParams != null)
                 {
-                    sqlCommand.Parameters.AddRange(sqlParams);
+                    sqlCommand.Parameters.AddRange(BindableParameters(spName, sqlParams));
                 }
                 SqlDataAdapter adapter = new SqlDataAdapter(sqlCommand);
                 adapter.Fill(table);
@@ -188,7 +258,7 @@ namespace AccessControl.Database
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 if (sqlParams != null)
                 {
-                    sqlCommand.Parameters.AddRange(sqlParams);
+                    sqlCommand.Parameters.AddRange(BindableParameters(spName, sqlParams));
                 }
                 SqlDataAdapter adapter = new SqlDataAdapter(sqlCommand);
                 adapter.Fill(table);
@@ -228,7 +298,7 @@ namespace AccessControl.Database
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 if (sqlParams != null)
                 {
-                    sqlCommand.Parameters.AddRange(sqlParams);
+                    sqlCommand.Parameters.AddRange(BindableParameters(spName, sqlParams));
                 }
                 sqlCommand.ExecuteNonQuery();
 
@@ -266,7 +336,7 @@ namespace AccessControl.Database
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 if (sqlParams != null)
                 {
-                    sqlCommand.Parameters.AddRange(sqlParams);
+                    sqlCommand.Parameters.AddRange(BindableParameters(spName, sqlParams));
                 }
                 scalarInt = Convert.ToInt32(sqlCommand.ExecuteScalar());
             }
@@ -347,7 +417,7 @@ namespace AccessControl.Database
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 if (sqlParams != null)
                 {
-                    sqlCommand.Parameters.AddRange(sqlParams);
+                    sqlCommand.Parameters.AddRange(BindableParameters(spName, sqlParams));
                 }
                 scalarString = Convert.ToString(sqlCommand.ExecuteScalar())!;
             }

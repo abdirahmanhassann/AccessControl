@@ -587,6 +587,11 @@ BEGIN
         CONSTRAINT [DF_Rooms_LocationKind] DEFAULT ('Apartment');
 END
 GO
+IF COL_LENGTH('dbo.Sites', 'QrCodeIdentifier') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Sites] ADD [QrCodeIdentifier] NVARCHAR(100) NULL;
+END
+GO
 IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Sites_IsActive')
 BEGIN
 ALTER TABLE [dbo].[Sites] ADD  CONSTRAINT [DF_Sites_IsActive]  DEFAULT ((1)) FOR [IsActive]
@@ -2453,6 +2458,309 @@ BEGIN
     ) THEN 1 ELSE 0 END AS INT) AS [Allowed];
 END
 GO
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentsGet]
+    @Id INT = NULL,
+    @SiteId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        d.[Id],
+        d.[SiteId],
+        s.[Name] AS [SiteName],
+        d.[Name],
+        d.[Description],
+        d.[IsActive],
+        d.[CreatedAt]
+    FROM [dbo].[Departments] d
+    INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    WHERE (@Id IS NULL OR d.[Id] = @Id)
+      AND (@SiteId IS NULL OR d.[SiteId] = @SiteId)
+    ORDER BY s.[Name], d.[Name];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentsInsert]
+    @SiteId INT,
+    @Name NVARCHAR(200),
+    @Description NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[Departments] ([SiteId], [Name], [Description])
+    VALUES (@SiteId, @Name, @Description);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentsUpdate]
+    @Id INT,
+    @SiteId INT,
+    @Name NVARCHAR(200),
+    @Description NVARCHAR(500) = NULL,
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[Departments]
+    SET [SiteId] = @SiteId, [Name] = @Name, [Description] = @Description, [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentRoomMappingGet]
+    @Id INT = NULL,
+    @DepartmentId INT = NULL,
+    @RoomId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[DepartmentId],
+        d.[Name] AS [DepartmentName],
+        d.[SiteId],
+        m.[RoomId],
+        r.[RoomNumber],
+        r.[Name] AS [RoomName]
+    FROM [dbo].[DepartmentRoomMapping] m
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = m.[DepartmentId]
+    INNER JOIN [dbo].[Rooms] r ON r.[Id] = m.[RoomId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@DepartmentId IS NULL OR m.[DepartmentId] = @DepartmentId)
+      AND (@RoomId IS NULL OR m.[RoomId] = @RoomId)
+    ORDER BY d.[Name], r.[RoomNumber];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentRoomMappingDelete]
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM [dbo].[DepartmentRoomMapping] WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentManagerMappingGet]
+    @Id INT = NULL,
+    @DepartmentId INT = NULL,
+    @UserId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[DepartmentId],
+        d.[Name] AS [DepartmentName],
+        d.[SiteId],
+        m.[UserId],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[Role],
+        m.[IsPrimary],
+        m.[AssignedAt]
+    FROM [dbo].[DepartmentManagerMapping] m
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = m.[DepartmentId]
+    INNER JOIN [dbo].[Users] u ON u.[Id] = m.[UserId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@DepartmentId IS NULL OR m.[DepartmentId] = @DepartmentId)
+      AND (@UserId IS NULL OR m.[UserId] = @UserId)
+    ORDER BY d.[Name], u.[LastName], u.[FirstName];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentManagerMappingInsert]
+    @DepartmentId INT,
+    @UserId INT,
+    @IsPrimary BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[DepartmentManagerMapping] ([DepartmentId], [UserId], [IsPrimary])
+    VALUES (@DepartmentId, @UserId, @IsPrimary);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentManagerMappingUpdate]
+    @Id INT,
+    @DepartmentId INT,
+    @UserId INT,
+    @IsPrimary BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[DepartmentManagerMapping]
+    SET [DepartmentId] = @DepartmentId, [UserId] = @UserId, [IsPrimary] = @IsPrimary
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentManagerMappingDelete]
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM [dbo].[DepartmentManagerMapping] WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[WorkerSiteMappingGet]
+    @Id INT = NULL,
+    @WorkerId INT = NULL,
+    @SiteId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[WorkerId],
+        w.[FirstName] AS [WorkerFirstName],
+        w.[LastName] AS [WorkerLastName],
+        m.[SiteId],
+        s.[Name] AS [SiteName]
+    FROM [dbo].[WorkerSiteMapping] m
+    INNER JOIN [dbo].[Workers] w ON w.[Id] = m.[WorkerId]
+    INNER JOIN [dbo].[Sites] s ON s.[Id] = m.[SiteId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@WorkerId IS NULL OR m.[WorkerId] = @WorkerId)
+      AND (@SiteId IS NULL OR m.[SiteId] = @SiteId)
+    ORDER BY w.[LastName], s.[Name];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[WorkerSiteMappingInsert]
+    @WorkerId INT,
+    @SiteId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[WorkerSiteMapping] ([WorkerId], [SiteId])
+    VALUES (@WorkerId, @SiteId);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[WorkerSiteMappingDelete]
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM [dbo].[WorkerSiteMapping] WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[DepartmentsForRoomGet]
+    @RoomId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT DISTINCT
+        d.[Id],
+        d.[SiteId],
+        s.[Name] AS [SiteName],
+        d.[Name],
+        d.[Description],
+        d.[IsActive],
+        d.[CreatedAt]
+    FROM [dbo].[DepartmentRoomMapping] drm
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = drm.[DepartmentId] AND d.[IsActive] = 1
+    INNER JOIN [dbo].[Rooms] r ON r.[Id] = drm.[RoomId]
+    INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
+    INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    WHERE drm.[RoomId] = @RoomId
+    ORDER BY d.[Name];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[SitesGetByQrCode]
+    @QrCodeIdentifier NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        0 AS [Id],
+        0 AS [WorkAreaId],
+        CAST('' AS NVARCHAR(100)) AS [RoomNumber],
+        s.[Name],
+        s.[QrCodeIdentifier],
+        s.[Address] AS [Description],
+        s.[IsActive],
+        s.[CreatedAt],
+        CAST('' AS NVARCHAR(200)) AS [WorkAreaName],
+        CAST('' AS NVARCHAR(500)) AS [WorkAreaDescription],
+        s.[Id] AS [SiteId],
+        s.[Name] AS [SiteName],
+        s.[Address] AS [SiteAddress],
+        s.[Reference] AS [SiteReference],
+        CAST(N'site' AS NVARCHAR(20)) AS [ScanKind]
+    FROM [dbo].[Sites] s
+    WHERE s.[IsActive] = 1
+      AND s.[QrCodeIdentifier] IS NOT NULL
+      AND LOWER(s.[QrCodeIdentifier]) = LOWER(@QrCodeIdentifier);
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[RoomManagersGet]
+    @Id INT = NULL,
+    @RoomId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[RoomId],
+        m.[UserId],
+        m.[UserId] AS [ManagerUserId],
+        m.[IsPrimary],
+        m.[AssignedAt],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[Role]
+    FROM [dbo].[RoomManagers] m
+    INNER JOIN [dbo].[Users] u ON u.[Id] = m.[UserId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@RoomId IS NULL OR @RoomId = 0 OR m.[RoomId] = @RoomId)
+    ORDER BY m.[IsPrimary] DESC, u.[LastName], u.[FirstName];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[RoomManagersInsert]
+    @RoomId INT,
+    @UserId INT,
+    @IsPrimary BIT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[RoomManagers] ([RoomId], [UserId], [IsPrimary])
+    VALUES (@RoomId, @UserId, @IsPrimary);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[RoomManagersUpdate]
+    @Id INT,
+    @RoomId INT,
+    @UserId INT,
+    @IsPrimary BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[RoomManagers]
+    SET [RoomId] = @RoomId, [UserId] = @UserId, [IsPrimary] = @IsPrimary
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+
 USE [master]
 GO
 ALTER DATABASE [AccessControl] SET  READ_WRITE 
