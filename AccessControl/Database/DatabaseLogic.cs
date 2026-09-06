@@ -901,7 +901,18 @@ namespace AccessControl.Database
                 sqlParams.Add(_conn.GenerateInputDateTime("@WorkTo", workTo.Value));
             }
 
-          return  _conn.ExecuteStoredProcedureAsScalarInt("AccessRequestsInsert", sqlParams.ToArray());
+            try
+            {
+                return _conn.ExecuteStoredProcedureAsScalarInt("AccessRequestsInsert", sqlParams.ToArray());
+            }
+            catch (Exception ex) when (ex.Message.IndexOf("too many arguments", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                sqlParams.RemoveAll(p =>
+                    string.Equals(p.ParameterName, "@SupervisorName", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(p.ParameterName, "@WorkFrom", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(p.ParameterName, "@WorkTo", StringComparison.OrdinalIgnoreCase));
+                return _conn.ExecuteStoredProcedureAsScalarInt("AccessRequestsInsert", sqlParams.ToArray());
+            }
         }
 
         public void UpdateAccessRequest(

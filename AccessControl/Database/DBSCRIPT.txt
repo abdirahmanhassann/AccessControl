@@ -1089,13 +1089,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+IF COL_LENGTH('dbo.AccessRequests', 'SupervisorName') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[AccessRequests] ADD [SupervisorName] NVARCHAR(200) NULL;
+END
+GO
+IF COL_LENGTH('dbo.AccessRequests', 'WorkFrom') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[AccessRequests] ADD [WorkFrom] DATETIME2(0) NULL;
+END
+GO
+IF COL_LENGTH('dbo.AccessRequests', 'WorkTo') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[AccessRequests] ADD [WorkTo] DATETIME2(0) NULL;
+END
+GO
 CREATE OR ALTER PROCEDURE [dbo].[AccessRequestsInsert]
     @WorkerId INT = NULL,
-    @PhoneNumber nvarchar (30),
+    @PhoneNumber nvarchar (30) = NULL,
     @RoomId INT,
     @Reason NVARCHAR(500) = NULL,
     @WorkType NVARCHAR(200) = NULL,
-    @Description NVARCHAR(1000) = NULL
+    @Description NVARCHAR(1000) = NULL,
+    @SupervisorName NVARCHAR(200) = NULL,
+    @WorkFrom DATETIME2(0) = NULL,
+    @WorkTo DATETIME2(0) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -1107,6 +1125,10 @@ BEGIN
         [Reason],
         [WorkType],
         [Description],
+        [SupervisorName],
+        [WorkFrom],
+        [WorkTo],
+        [ExpectedClockOutAt],
         [CreatedAt]
     )
     VALUES
@@ -1116,6 +1138,10 @@ BEGIN
         @Reason,
         @WorkType,
         @Description,
+        @SupervisorName,
+        @WorkFrom,
+        @WorkTo,
+        @WorkTo,
         GETDATE()
     );
 
