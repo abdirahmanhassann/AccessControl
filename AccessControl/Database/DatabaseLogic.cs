@@ -13,7 +13,7 @@ namespace AccessControl.Database
         {
             _conn = new(connectionString, keepAlive);
         }
-        public void Signup(string email, string firstName, string lastName, string password, string salt, string phoneNumber)
+        public void Signup(string email, string firstName, string lastName, string password, string salt, string phoneNumber, string role = "Manager")
         {
             List<SqlParameter> sqlParams = new();
             sqlParams.Add(_conn.GenerateInputString("@Email", email, 255));
@@ -22,6 +22,7 @@ namespace AccessControl.Database
             sqlParams.Add(_conn.GenerateInputString("@Password", password, 50));
             sqlParams.Add(_conn.GenerateInputString("@Salt", salt, 50));
             sqlParams.Add(_conn.GenerateInputString("@PhoneNumber", phoneNumber));
+            sqlParams.Add(_conn.GenerateInputString("@Role", string.IsNullOrWhiteSpace(role) ? "Manager" : role, 50));
             _conn.ExecuteStoredProcedureNoReturn("CreateUser", sqlParams.ToArray());
         }
         public DataRow GetAccountByEmail(string email)
@@ -214,16 +215,20 @@ namespace AccessControl.Database
         }
 
 
-        public DataTable GetUsers()
+        public DataTable GetUsers(int id = 0)
         {
             List<SqlParameter> sqlParams = new();
+            if (id > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@Id", id));
+            }
 
             return _conn.ExecuteStoredProcedureAsDataTable(
                 "UsersGet",
                 sqlParams.ToArray());
         }
 
-        public void InsertUser(
+        public int InsertUser(
             string firstName,
             string lastName,
             string email,
@@ -262,9 +267,23 @@ namespace AccessControl.Database
                     role,
                     50));
 
-            _conn.ExecuteStoredProcedureNoReturn(
+            DataRow created = _conn.ExecuteStoredProcedureAsDataRow(
                 "UsersInsert",
                 sqlParams.ToArray());
+            if (created != null && created.Table.Columns.Contains("Id") && created["Id"] != DBNull.Value)
+            {
+                return Convert.ToInt32(created["Id"]);
+            }
+            return 0;
+        }
+
+        public void SetUserPassword(int id, string password, string salt)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputInteger("@Id", id));
+            sqlParams.Add(_conn.GenerateInputString("@Password", password, 50));
+            sqlParams.Add(_conn.GenerateInputString("@Salt", salt, 50));
+            _conn.ExecuteStoredProcedureNoReturn("UsersSetPassword", sqlParams.ToArray());
         }
 
         public void UpdateUser(
@@ -533,7 +552,7 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public void InsertRoom(
+        public int InsertRoom(
             int workAreaId,
             string roomNumber,
             string? name,
@@ -571,9 +590,32 @@ namespace AccessControl.Database
                     string.IsNullOrWhiteSpace(locationKind) ? "Apartment" : locationKind,
                     30));
 
-            _conn.ExecuteStoredProcedureNoReturn(
-                "RoomsInsert",
-                sqlParams.ToArray());
+            DataRow created;
+            try
+            {
+                created = _conn.ExecuteStoredProcedureAsDataRow(
+                    "RoomsInsert",
+                    sqlParams.ToArray());
+            }
+            catch
+            {
+                created = null;
+            }
+            if (created != null && created.Table.Columns.Contains("Id") && created["Id"] != DBNull.Value)
+            {
+                return Convert.ToInt32(created["Id"]);
+            }
+
+            DataTable dt = GetRooms(null, workAreaId);
+            foreach (DataRow row in dt.Rows)
+            {
+                string existing = Convert.ToString(row["RoomNumber"]) ?? "";
+                if (string.Equals(existing, roomNumber, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Convert.ToInt32(row["Id"]);
+                }
+            }
+            return 0;
         }
 
         public void UpdateRoom(
@@ -1804,7 +1846,7 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public bool ManagerCanApprove(int approverUserId, int? roomId, int? accessRequestId)
+        public bool ManagerCanApprove(int approverUserId, int? roomId, int? accessRequestId, int? departmentId = null)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -1827,6 +1869,14 @@ namespace AccessControl.Database
                     _conn.GenerateInputInteger(
                         "@AccessRequestId",
                         accessRequestId.Value));
+            }
+
+            if (departmentId.HasValue && departmentId.Value > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger(
+                        "@DepartmentId",
+                        departmentId.Value));
             }
 
             return _conn.ExecuteStoredProcedureAsScalarInt(

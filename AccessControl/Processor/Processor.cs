@@ -64,7 +64,7 @@ namespace AccessControl.Processor
             }
         }
 
-        public GenericResponse SignUp(string email, string firstName, string lastName, string password, string phoneNumber)
+        public GenericResponse SignUp(string email, string firstName, string lastName, string password, string phoneNumber, string role = "Manager")
         {
             try
             {
@@ -73,7 +73,7 @@ namespace AccessControl.Processor
                 string salt = enc.GenerateRandomSalt();
                 string pwdEncrypted = enc.Encrypt(password, salt);
 
-                _db.Signup(email, firstName, lastName, pwdEncrypted, salt, phoneNumber);
+                _db.Signup(email, firstName, lastName, pwdEncrypted, salt, phoneNumber, role);
                 return CreateSuccessResponseNoData();
             }
             catch (Exception ex)
@@ -81,6 +81,114 @@ namespace AccessControl.Processor
                 // We do not have a userId at this point, so log under account 0
                 _db.LogError(MethodBase.GetCurrentMethod()?.Module + "/" + MethodBase.GetCurrentMethod()?.Name!,
                     ex.Message + " " + ex.StackTrace, 0);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public async Task<GenericResponse> RequestPasswordReset(string email)
+        {
+            try
+            {
+                DataRow user = _db.GetAccountByEmail(email);
+                if (user != null)
+                {
+                    string phone = user.Table.Columns.Contains("PhoneNumber")
+                        ? user.Field<string>("PhoneNumber") ?? ""
+                        : "";
+                    if (!string.IsNullOrWhiteSpace(phone))
+                    {
+                        int code = ApiHelper.GenerateNumericOtp();
+                        _db.InsertOTPVerification(phone, code, DateTime.Now.AddMinutes(10));
+                        try
+                        {
+                            TwilioHelper twilio = new();
+                            await twilio.SendPlainMessageAsync(
+                                phone,
+                                $"SiteGate password reset code: {code:D6}. It expires in 10 minutes.");
+                        }
+                        catch (Exception smsEx)
+                        {
+                            _db.LogError(
+                                MethodBase.GetCurrentMethod()?.Module + "/" +
+                                MethodBase.GetCurrentMethod()?.Name!,
+                                "Twilio SMS skipped: " + smsEx.Message,
+                                0);
+                        }
+                    }
+                }
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse ResetPassword(string email, int code, string password)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+                {
+                    return CreateFailureResponse("Password must be at least 8 characters.");
+                }
+                DataRow user = _db.GetAccountByEmail(email);
+                if (user == null)
+                {
+                    return CreateFailureResponse("That reset code is not valid.");
+                }
+                DataRow otp = _db.VerifyOTP(code);
+                bool ok = otp != null && otp.Table.Columns.Contains("value") && Convert.ToInt32(otp["value"]) == 1;
+                if (!ok && otp != null && otp.Table.Columns.Contains("Value"))
+                {
+                    ok = Convert.ToInt32(otp["Value"]) == 1;
+                }
+                if (!ok)
+                {
+                    return CreateFailureResponse("That reset code is not valid or has expired.");
+                }
+                int userId = Convert.ToInt32(user["Id"]);
+                Encryptor enc = new(_config);
+                string salt = enc.GenerateRandomSalt();
+                _db.SetUserPassword(userId, enc.Encrypt(password, salt), salt);
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        public GenericResponse SetUserPassword(int actorId, int userId, string password)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+                {
+                    return CreateFailureResponse("Password must be at least 8 characters.");
+                }
+                Encryptor enc = new(_config);
+                string salt = enc.GenerateRandomSalt();
+                _db.SetUserPassword(userId, enc.Encrypt(password, salt), salt);
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    actorId);
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
@@ -298,16 +406,23 @@ namespace AccessControl.Processor
             string lastName,
             string email,
             string? phoneNumber,
-            string role)
+            string role,
+            string? password = null)
         {
             try
             {
-                _db.InsertUser(
+                int createdId = _db.InsertUser(
                     firstName,
                     lastName,
                     email,
                     phoneNumber,
                     role);
+                if (!string.IsNullOrWhiteSpace(password) && createdId > 0)
+                {
+                    Encryptor enc = new(_config);
+                    string salt = enc.GenerateRandomSalt();
+                    _db.SetUserPassword(createdId, enc.Encrypt(password, salt), salt);
+                }
 
                 return CreateSuccessResponseNoData();
             }
@@ -809,7 +924,11 @@ namespace AccessControl.Processor
             int approverUserId,
             string? supervisorName,
             DateTime? workFrom,
-            DateTime? workTo)
+            DateTime? workTo,
+            int workAreaId = 0,
+            string? roomText = null,
+            int departmentId = 0,
+            string? locationKind = null)
         {
             try
             {
@@ -817,7 +936,16 @@ namespace AccessControl.Processor
                 {
                     return CreateFailureResponse("A manager must be selected to approve this request.");
                 }
-                if (!_db.ManagerCanApprove(approverUserId, roomId, null))
+
+                int resolvedRoomId = ResolveRoomId(roomId, workAreaId, roomText, locationKind);
+                if (resolvedRoomId < 1)
+                {
+                    return CreateFailureResponse("Choose the tower and enter the room.");
+                }
+
+                EnsureDepartmentRoomLink(departmentId, resolvedRoomId);
+
+                if (!ManagerIsAllowed(approverUserId, resolvedRoomId, departmentId))
                 {
                     return CreateFailureResponse("That manager is not assigned to that location.");
                 }
@@ -825,7 +953,7 @@ namespace AccessControl.Processor
                 int dr = _db.InsertAccessRequest(
                     phoneNumber,
                     workerId,
-                    roomId,
+                    resolvedRoomId,
                     reason,
                     workType,
                     description,
@@ -841,7 +969,7 @@ namespace AccessControl.Processor
                     $"Worker #{workerId} submitted access request #{dr} for manager #{approverUserId}.");
 
                 DataTable dt = _db.GetWorkers(workerId);
-                DataTable dt2 = _db.GetRooms(roomId);
+                DataTable dt2 = _db.GetRooms(resolvedRoomId);
                 string firstname = "", lastname = "", sitename = "", workareaname = "", roomname = "";
                 if (dt.Rows.Count > 0)
                 {
@@ -852,13 +980,23 @@ namespace AccessControl.Processor
                 {
                     sitename = dt2.Rows[0].Field<string>("SiteName") ?? "";
                     workareaname = dt2.Rows[0].Field<string>("WorkAreaName") ?? "";
-                    roomname = dt2.Rows[0].Field<string>("RoomName") ?? dt2.Rows[0].Field<string>("RoomName") ?? "";
+                    roomname = dt2.Rows[0].Field<string>("RoomName") ?? dt2.Rows[0].Field<string>("RoomNumber") ?? "";
+                }
+
+                string managerPhone = "";
+                DataTable managers = _db.GetUsers(approverUserId);
+                if (managers.Rows.Count > 0 && managers.Columns.Contains("PhoneNumber"))
+                {
+                    managerPhone = managers.Rows[0].Field<string>("PhoneNumber") ?? "";
                 }
 
                 try
                 {
-                    TwilioHelper twilio = new();
-                    await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, phoneNumber);
+                    if (!string.IsNullOrWhiteSpace(managerPhone))
+                    {
+                        TwilioHelper twilio = new();
+                        await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, managerPhone);
+                    }
                 }
                 catch (Exception smsEx)
                 {
@@ -868,7 +1006,7 @@ namespace AccessControl.Processor
                         "Twilio SMS skipped: " + smsEx.Message,
                         0);
                 }
-                return CreateSuccessResponseWithData(dr);
+                return CreateSuccessResponseWithData(new { Id = dr, RoomId = resolvedRoomId });
             }
             catch (Exception ex)
             {
@@ -880,6 +1018,193 @@ namespace AccessControl.Processor
 
                 return CreateFailureResponse(GENERIC_ERROR);
             }
+        }
+
+        private int ResolveRoomId(int roomId, int workAreaId, string? roomText, string? locationKind)
+        {
+            if (roomId > 0)
+            {
+                DataTable existing = _db.GetRooms(roomId);
+                if (existing.Rows.Count > 0)
+                {
+                    return roomId;
+                }
+            }
+
+            string typed = (roomText ?? "").Trim();
+            if (workAreaId < 1 || typed.Length == 0)
+            {
+                return 0;
+            }
+
+            DataTable rooms = _db.GetRooms(null, workAreaId);
+            int matched = MatchRoomId(rooms, typed);
+            if (matched > 0)
+            {
+                return matched;
+            }
+
+            var parsed = ParseEnteredRoom(typed, locationKind);
+            try
+            {
+                return _db.InsertRoom(
+                    workAreaId,
+                    parsed.Number,
+                    parsed.Name,
+                    "Created from worker access request",
+                    parsed.Kind);
+            }
+            catch
+            {
+                DataTable again = _db.GetRooms(null, workAreaId);
+                int existing = MatchRoomId(again, typed);
+                if (existing > 0) return existing;
+                throw;
+            }
+        }
+
+        private static int MatchRoomId(DataTable rooms, string query)
+        {
+            string q = Norm(query);
+            if (q.Length == 0) return 0;
+            var parsed = ParseEnteredRoom(query, null);
+            string number = Norm(parsed.Number);
+            string parsedName = Norm(parsed.Name);
+
+            foreach (DataRow row in rooms.Rows)
+            {
+                string roomNumber = Norm(Col(row, "RoomNumber"));
+                string name = Norm(Col(row, "RoomName", "Name"));
+                string kind = Col(row, "LocationKind");
+                string label = Norm(
+                    name.Length > 0
+                        ? name
+                        : string.Equals(kind, "Riser", StringComparison.OrdinalIgnoreCase)
+                            ? "riser " + roomNumber
+                            : "apartment " + roomNumber);
+                if (roomNumber == q || name == q || label == q || roomNumber == number || name == parsedName)
+                {
+                    return Convert.ToInt32(row["Id"]);
+                }
+            }
+            return 0;
+        }
+
+        private static (string Number, string Name, string Kind) ParseEnteredRoom(string text, string? locationKind)
+        {
+            string q = text.Trim();
+            string kind = string.IsNullOrWhiteSpace(locationKind) ? InferLocationKind(q) : locationKind.Trim();
+            string number = q;
+            if (q.StartsWith("riser ", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = "Riser";
+                number = q.Substring(6).Trim();
+            }
+            else if (q.StartsWith("apartment ", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = "Apartment";
+                number = q.Substring(10).Trim();
+            }
+            else if (q.StartsWith("apt ", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = "Apartment";
+                number = q.Substring(4).Trim();
+            }
+            if (number.Length == 0) number = q;
+            if (!string.Equals(kind, "Riser", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = "Apartment";
+            }
+            string name = string.Equals(kind, "Riser", StringComparison.OrdinalIgnoreCase)
+                ? "Riser " + number
+                : "Apartment " + number;
+            return (number, name, kind);
+        }
+
+        private static string InferLocationKind(string text)
+        {
+            if (text.IndexOf("riser", StringComparison.OrdinalIgnoreCase) >= 0) return "Riser";
+            if (text.StartsWith("apartment", StringComparison.OrdinalIgnoreCase) ||
+                text.StartsWith("apt ", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Apartment";
+            }
+            if (text.Length > 0 && char.IsLetter(text[0]))
+            {
+                foreach (char c in text)
+                {
+                    if (char.IsDigit(c)) return "Riser";
+                }
+            }
+            return "Apartment";
+        }
+
+        private static string Norm(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "";
+            return string.Join(" ", value.Trim().ToLowerInvariant().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        private static string Col(DataRow row, params string[] names)
+        {
+            foreach (string name in names)
+            {
+                if (row.Table.Columns.Contains(name) && row[name] != DBNull.Value)
+                {
+                    return Convert.ToString(row[name]) ?? "";
+                }
+            }
+            return "";
+        }
+
+        private void EnsureDepartmentRoomLink(int departmentId, int roomId)
+        {
+            if (departmentId < 1 || roomId < 1) return;
+            try
+            {
+                DataTable existing = _db.GetDepartmentRoomMappings();
+                foreach (DataRow row in existing.Rows)
+                {
+                    int mappedDepartment = 0;
+                    int mappedRoom = 0;
+                    if (row.Table.Columns.Contains("DepartmentId") && row["DepartmentId"] != DBNull.Value)
+                    {
+                        mappedDepartment = Convert.ToInt32(row["DepartmentId"]);
+                    }
+                    if (row.Table.Columns.Contains("RoomId") && row["RoomId"] != DBNull.Value)
+                    {
+                        mappedRoom = Convert.ToInt32(row["RoomId"]);
+                    }
+                    if (mappedDepartment == departmentId && mappedRoom == roomId)
+                    {
+                        return;
+                    }
+                }
+                _db.InsertDepartmentRoomMapping(departmentId, roomId);
+            }
+            catch
+            {
+                // Unique constraint if two workers create the same link together.
+            }
+        }
+
+        private bool ManagerIsAllowed(int approverUserId, int roomId, int departmentId)
+        {
+            if (_db.ManagerCanApprove(approverUserId, roomId, null, departmentId))
+            {
+                return true;
+            }
+            if (departmentId < 1) return false;
+            DataTable dt = _db.GetManagersForRoom(roomId, departmentId);
+            foreach (DataRow row in dt.Rows)
+            {
+                string raw = Col(row, "UserId", "Id");
+                if (int.TryParse(raw, out int id) && id == approverUserId)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public GenericResponse UpdateAccessRequest(

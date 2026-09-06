@@ -78,6 +78,7 @@
             public string Email { get; set; }
             public string PhoneNumber { get; set; }
             public string Role { get; set; }
+            public string Password { get; set; }
         }
 
         public struct UpdateUserRequest
@@ -117,6 +118,7 @@
         }
         public struct CreateUserRequest
         {
+            public string Token { get; set; }
             public string FirstName { get; set; }
             public string LastName { get; set; }
             public string Email { get; set; }
@@ -125,6 +127,25 @@
 
             public string Role { get; set; }
             public bool IsActive { get; set; }
+        }
+
+        public struct RequestPasswordResetRequest
+        {
+            public string Email { get; set; }
+        }
+
+        public struct StaffResetPasswordRequest
+        {
+            public string Email { get; set; }
+            public int Code { get; set; }
+            public string Password { get; set; }
+        }
+
+        public struct SetUserPasswordRequest
+        {
+            public string Token { get; set; }
+            public int Id { get; set; }
+            public string Password { get; set; }
         }
 
 
@@ -279,6 +300,11 @@
             public string PhoneNumber { get; set; }
             public int WorkerId { get; set; }
             public int RoomId { get; set; }
+            public int WorkAreaId { get; set; }
+            public string RoomText { get; set; }
+            public string RoomNumber { get; set; }
+            public int DepartmentId { get; set; }
+            public string LocationKind { get; set; }
             public string Reason { get; set; }
             public string WorkType { get; set; }
             public string Description { get; set; }

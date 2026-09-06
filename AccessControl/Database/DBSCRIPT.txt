@@ -1736,25 +1736,50 @@ CREATE OR ALTER PROCEDURE [dbo].[RoomsInsert]
     @WorkAreaId INT,
     @RoomNumber NVARCHAR(100),
     @Name NVARCHAR(200) = NULL,
-    @Description NVARCHAR(500) = NULL
+    @Description NVARCHAR(500) = NULL,
+    @LocationKind NVARCHAR(30) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+    IF @LocationKind IS NULL OR LTRIM(RTRIM(@LocationKind)) = ''
+        SET @LocationKind = N'Apartment';
 
-    INSERT INTO [dbo].[Rooms]
-    (
-        [WorkAreaId],
-        [RoomNumber],
-        [Name],
-        [Description]
-    )
-    VALUES
-    (
-        @WorkAreaId,
-        @RoomNumber,
-        @Name,
-        @Description
-    );
+    IF COL_LENGTH('dbo.Rooms', 'LocationKind') IS NULL
+    BEGIN
+        INSERT INTO [dbo].[Rooms]
+        (
+            [WorkAreaId],
+            [RoomNumber],
+            [Name],
+            [Description]
+        )
+        VALUES
+        (
+            @WorkAreaId,
+            @RoomNumber,
+            @Name,
+            @Description
+        );
+    END
+    ELSE
+    BEGIN
+        INSERT INTO [dbo].[Rooms]
+        (
+            [WorkAreaId],
+            [RoomNumber],
+            [Name],
+            [Description],
+            [LocationKind]
+        )
+        VALUES
+        (
+            @WorkAreaId,
+            @RoomNumber,
+            @Name,
+            @Description,
+            @LocationKind
+        );
+    END
 
     DECLARE @Id INT = CAST(SCOPE_IDENTITY() AS INT);
 
@@ -1964,6 +1989,19 @@ BEGIN
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
 GO
+CREATE OR ALTER PROCEDURE [dbo].[UsersSetPassword]
+    @Id INT,
+    @Password NVARCHAR(200),
+    @Salt NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[Users]
+    SET [Password] = @Password, [Salt] = @Salt
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
 /****** Object:  StoredProcedure [dbo].[WorkAreaManagersGet]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
@@ -2076,8 +2114,8 @@ BEGIN
     INNER JOIN [dbo].[Sites] s
         ON s.[Id] = wa.[SiteId]
     WHERE (@Id IS NULL OR wa.[Id] = @Id)
-      AND (@SiteId IS NULL OR wa.[SiteId] = @SiteId)
-    ORDER BY wa.[Name];
+      AND (@SiteId IS NULL OR @SiteId = 0 OR wa.[SiteId] = @SiteId)
+    ORDER BY s.[Name], wa.[Name];
 END;
 GO
 /****** Object:  StoredProcedure [dbo].[WorkAreasInsert]    Script Date: 29/08/2026 14:04:35 ******/
@@ -2229,6 +2267,171 @@ BEGIN
 
     SELECT @@ROWCOUNT AS [RowsAffected];
 END;
+GO
+IF COL_LENGTH('dbo.Rooms', 'LocationKind') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Rooms] ADD [LocationKind] NVARCHAR(30) NOT NULL
+        CONSTRAINT [DF_Rooms_LocationKind] DEFAULT ('Apartment');
+END
+GO
+IF OBJECT_ID(N'[dbo].[Rooms]', N'U') IS NOT NULL
+AND NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'UQ_Rooms_WorkArea_RoomNumber' AND object_id = OBJECT_ID(N'[dbo].[Rooms]')
+)
+BEGIN
+    BEGIN TRY
+        CREATE UNIQUE NONCLUSTERED INDEX [UQ_Rooms_WorkArea_RoomNumber]
+            ON [dbo].[Rooms]([WorkAreaId] ASC, [RoomNumber] ASC);
+    END TRY
+    BEGIN CATCH
+        -- Existing duplicate room numbers on a tower; find-or-create still matches first.
+    END CATCH
+END
+GO
+IF OBJECT_ID(N'[dbo].[DepartmentRoomMapping]', N'U') IS NOT NULL
+BEGIN
+    EXEC(N'
+    CREATE OR ALTER PROCEDURE [dbo].[DepartmentRoomMappingInsert]
+        @DepartmentId INT,
+        @RoomId INT
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        IF NOT EXISTS (
+            SELECT 1
+            FROM [dbo].[DepartmentRoomMapping]
+            WHERE [DepartmentId] = @DepartmentId AND [RoomId] = @RoomId
+        )
+        BEGIN
+            INSERT INTO [dbo].[DepartmentRoomMapping] ([DepartmentId], [RoomId])
+            VALUES (@DepartmentId, @RoomId);
+        END
+        SELECT CAST(ISNULL((
+            SELECT [Id] FROM [dbo].[DepartmentRoomMapping]
+            WHERE [DepartmentId] = @DepartmentId AND [RoomId] = @RoomId
+        ), 0) AS INT) AS [Id];
+    END');
+END
+GO
+CREATE OR ALTER PROCEDURE [dbo].[ManagersForRoomGet]
+    @RoomId INT,
+    @DepartmentId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @DepartmentId IS NOT NULL AND @DepartmentId > 0
+    BEGIN
+        SELECT DISTINCT
+            u.[Id],
+            u.[Id] AS [UserId],
+            u.[FirstName],
+            u.[LastName],
+            u.[Email],
+            u.[PhoneNumber],
+            u.[Role],
+            u.[IsActive],
+            d.[Id] AS [DepartmentId],
+            d.[Name] AS [DepartmentName],
+            d.[SiteId],
+            s.[Name] AS [SiteName]
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId]
+        LEFT JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+        WHERE dmm.[DepartmentId] = @DepartmentId
+        ORDER BY u.[LastName], u.[FirstName];
+        RETURN;
+    END
+
+    IF EXISTS (SELECT 1 FROM [dbo].[RoomManagers] WHERE [RoomId] = @RoomId)
+    BEGIN
+        SELECT DISTINCT
+            u.[Id],
+            u.[Id] AS [UserId],
+            u.[FirstName],
+            u.[LastName],
+            u.[Email],
+            u.[PhoneNumber],
+            u.[Role],
+            u.[IsActive],
+            CAST(NULL AS INT) AS [DepartmentId],
+            CAST(N'Location' AS NVARCHAR(200)) AS [DepartmentName],
+            wa.[SiteId],
+            s.[Name] AS [SiteName]
+        FROM [dbo].[RoomManagers] rm
+        INNER JOIN [dbo].[Users] u ON u.[Id] = rm.[UserId] AND u.[IsActive] = 1
+        INNER JOIN [dbo].[Rooms] r ON r.[Id] = rm.[RoomId]
+        INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
+        LEFT JOIN [dbo].[Sites] s ON s.[Id] = wa.[SiteId]
+        WHERE rm.[RoomId] = @RoomId
+        ORDER BY u.[LastName], u.[FirstName];
+        RETURN;
+    END
+
+    SELECT DISTINCT
+        u.[Id],
+        u.[Id] AS [UserId],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[PhoneNumber],
+        u.[Role],
+        u.[IsActive],
+        d.[Id] AS [DepartmentId],
+        d.[Name] AS [DepartmentName],
+        d.[SiteId],
+        s.[Name] AS [SiteName]
+    FROM [dbo].[DepartmentManagerMapping] dmm
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+    INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId]
+    INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
+    LEFT JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    WHERE drm.[RoomId] = @RoomId
+    ORDER BY u.[LastName], u.[FirstName];
+END
+GO
+CREATE OR ALTER PROCEDURE [dbo].[ManagerCanApprove]
+    @ApproverUserId INT,
+    @RoomId INT = NULL,
+    @AccessRequestId INT = NULL,
+    @DepartmentId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @ResolvedRoomId INT = @RoomId;
+    IF @ResolvedRoomId IS NULL AND @AccessRequestId IS NOT NULL
+        SELECT @ResolvedRoomId = [RoomId] FROM [dbo].[AccessRequests] WHERE [Id] = @AccessRequestId;
+
+    SELECT CAST(CASE WHEN EXISTS (
+        SELECT 1
+        FROM [dbo].[RoomManagers] rm
+        WHERE rm.[UserId] = @ApproverUserId
+          AND rm.[RoomId] = @ResolvedRoomId
+    ) OR EXISTS (
+        SELECT 1
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
+        WHERE dmm.[UserId] = @ApproverUserId
+          AND drm.[RoomId] = @ResolvedRoomId
+    ) OR EXISTS (
+        SELECT 1
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        WHERE dmm.[UserId] = @ApproverUserId
+          AND @DepartmentId IS NOT NULL
+          AND @DepartmentId > 0
+          AND dmm.[DepartmentId] = @DepartmentId
+    ) OR EXISTS (
+        SELECT 1
+        FROM [dbo].[WorkAreaManagers] wam
+        INNER JOIN [dbo].[Rooms] r ON r.[WorkAreaId] = wam.[WorkAreaId]
+        WHERE wam.[UserId] = @ApproverUserId
+          AND r.[Id] = @ResolvedRoomId
+    ) THEN 1 ELSE 0 END AS INT) AS [Allowed];
+END
 GO
 USE [master]
 GO

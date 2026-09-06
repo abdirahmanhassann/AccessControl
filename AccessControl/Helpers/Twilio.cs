@@ -34,7 +34,16 @@ public class TwilioHelper
         }
     }
 
-    // Send an SMS (message body provided at call time)
+    public async Task<MessageResource> SendPlainMessageAsync(string toNumber, string body)
+    {
+        if (string.IsNullOrWhiteSpace(toNumber)) throw new ArgumentException(nameof(toNumber));
+        if (string.IsNullOrWhiteSpace(body)) throw new ArgumentException(nameof(body));
+        return await MessageResource.CreateAsync(
+            body: body,
+            from: new PhoneNumber(_fromNumber),
+            to: new PhoneNumber(toNumber)
+        );
+    }
     public async Task<MessageResource> SendMessageAsync(string toNumber, int code)
     {
         if (string.IsNullOrWhiteSpace(toNumber)) throw new ArgumentException(nameof(toNumber));
@@ -67,7 +76,7 @@ public class TwilioHelper
     }
     public async Task<MessageResource> ApprovalRequestAsync(string firstname, string lastname,string site, string workarea, string roomName, string toNumber)
     {
-        string smsBody = $"Access request from {firstname} {lastname} has been sent to TOWER: {site}, Apartment: {workarea}, Room: {roomName}.";
+        string smsBody = $"{firstname} {lastname} requested access to {roomName} at {site} ({workarea}). Open SiteGate to approve or reject.";
         if (string.IsNullOrWhiteSpace(toNumber)) throw new ArgumentException(nameof(toNumber));
         try
         {

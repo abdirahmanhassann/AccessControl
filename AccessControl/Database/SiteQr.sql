@@ -551,7 +551,8 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[ManagerCanApprove]
     @ApproverUserId INT,
     @RoomId INT = NULL,
-    @AccessRequestId INT = NULL
+    @AccessRequestId INT = NULL,
+    @DepartmentId INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -571,6 +572,14 @@ BEGIN
         INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
         WHERE dmm.[UserId] = @ApproverUserId
           AND drm.[RoomId] = @ResolvedRoomId
+    ) OR EXISTS (
+        SELECT 1
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        WHERE dmm.[UserId] = @ApproverUserId
+          AND @DepartmentId IS NOT NULL
+          AND @DepartmentId > 0
+          AND dmm.[DepartmentId] = @DepartmentId
     ) OR EXISTS (
         SELECT 1
         FROM [dbo].[WorkAreaManagers] wam

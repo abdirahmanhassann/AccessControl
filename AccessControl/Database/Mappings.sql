@@ -208,9 +208,19 @@ CREATE OR ALTER PROCEDURE [dbo].[DepartmentRoomMappingInsert]
 AS
 BEGIN
     SET NOCOUNT ON;
-    INSERT INTO [dbo].[DepartmentRoomMapping] ([DepartmentId], [RoomId])
-    VALUES (@DepartmentId, @RoomId);
-    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+    IF NOT EXISTS (
+        SELECT 1
+        FROM [dbo].[DepartmentRoomMapping]
+        WHERE [DepartmentId] = @DepartmentId AND [RoomId] = @RoomId
+    )
+    BEGIN
+        INSERT INTO [dbo].[DepartmentRoomMapping] ([DepartmentId], [RoomId])
+        VALUES (@DepartmentId, @RoomId);
+    END
+    SELECT CAST(ISNULL((
+        SELECT [Id] FROM [dbo].[DepartmentRoomMapping]
+        WHERE [DepartmentId] = @DepartmentId AND [RoomId] = @RoomId
+    ), 0) AS INT) AS [Id];
 END
 GO
 
@@ -394,7 +404,8 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[ManagerCanApprove]
     @ApproverUserId INT,
     @RoomId INT = NULL,
-    @AccessRequestId INT = NULL
+    @AccessRequestId INT = NULL,
+    @DepartmentId INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -409,6 +420,14 @@ BEGIN
         INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
         WHERE dmm.[UserId] = @ApproverUserId
           AND drm.[RoomId] = @ResolvedRoomId
+    ) OR EXISTS (
+        SELECT 1
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        WHERE dmm.[UserId] = @ApproverUserId
+          AND @DepartmentId IS NOT NULL
+          AND @DepartmentId > 0
+          AND dmm.[DepartmentId] = @DepartmentId
     ) THEN 1 ELSE 0 END AS INT) AS [Allowed];
 END
 GO

@@ -33,7 +33,50 @@ namespace AccessControl.Controllers
         [HttpPost("signup")]
         public string Signup(CreateUserRequest req)
         {
-            GenericResponse ret = _proc.SignUp(req.Email, req.FirstName, req.LastName, req.Password, req.PhoneNumber);
+            int accountId = _security.CheckToken(req.Token);
+            if (accountId < 1)
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
+                    {
+                        Result = false,
+                        ErrorMessage = TOKEN_ERROR
+                    });
+            }
+
+            GenericResponse ret = _proc.SignUp(req.Email, req.FirstName, req.LastName, req.Password, req.PhoneNumber, req.Role);
+            return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("requestpasswordreset")]
+        public async Task<string> RequestPasswordReset(RequestPasswordResetRequest req)
+        {
+            GenericResponse ret = await _proc.RequestPasswordReset(req.Email);
+            return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("resetpassword")]
+        public string ResetPassword(StaffResetPasswordRequest req)
+        {
+            GenericResponse ret = _proc.ResetPassword(req.Email, req.Code, req.Password);
+            return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("setuserpassword")]
+        public string SetUserPassword(SetUserPasswordRequest req)
+        {
+            int accountId = _security.CheckToken(req.Token);
+            if (accountId < 1)
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
+                    {
+                        Result = false,
+                        ErrorMessage = TOKEN_ERROR
+                    });
+            }
+
+            GenericResponse ret = _proc.SetUserPassword((int)accountId, req.Id, req.Password);
             return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
         }
 
@@ -133,16 +176,6 @@ namespace AccessControl.Controllers
             if (!string.IsNullOrWhiteSpace(req.Token))
             {
                 accountId = _security.CheckToken(req.Token);
-            }
-
-            if (accountId < 1 && req.SiteId < 1)
-            {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
-                    {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
             }
 
             GenericResponse ret = _proc.GetWorkAreas((int)accountId, req.SiteId);
@@ -251,7 +284,8 @@ namespace AccessControl.Controllers
                 req.LastName,
                 req.Email,
                 req.PhoneNumber,
-                req.Role);
+                req.Role,
+                req.Password);
 
             return JsonConvert.SerializeObject(
                 ret,
@@ -682,7 +716,11 @@ namespace AccessControl.Controllers
                 req.ApproverUserId,
                 req.SupervisorName,
                 req.WorkFrom,
-                req.WorkTo);
+                req.WorkTo,
+                req.WorkAreaId,
+                string.IsNullOrWhiteSpace(req.RoomText) ? req.RoomNumber : req.RoomText,
+                req.DepartmentId,
+                req.LocationKind);
 
             return JsonConvert.SerializeObject(
                 ret,
