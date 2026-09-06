@@ -231,6 +231,19 @@ CREATE TABLE [dbo].[Rooms](
 ) ON [PRIMARY]
 END
 GO
+IF OBJECT_ID(N'[dbo].[RoomManagers]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[RoomManagers](
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [RoomId] INT NOT NULL,
+    [UserId] INT NOT NULL,
+    [IsPrimary] BIT NOT NULL CONSTRAINT [DF_RoomManagers_IsPrimary] DEFAULT (1),
+    [AssignedAt] DATETIME2(0) NOT NULL CONSTRAINT [DF_RoomManagers_AssignedAt] DEFAULT (sysutcdatetime()),
+    CONSTRAINT [PK_RoomManagers] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [UQ_RoomManagers_Room_User] UNIQUE NONCLUSTERED ([RoomId] ASC, [UserId] ASC)
+);
+END
+GO
 /****** Object:  Table [dbo].[Sites]    Script Date: 29/08/2026 14:04:35 ******/
 SET ANSI_NULLS ON
 GO
@@ -2336,31 +2349,6 @@ BEGIN
         RETURN;
     END
 
-    IF EXISTS (SELECT 1 FROM [dbo].[RoomManagers] WHERE [RoomId] = @RoomId)
-    BEGIN
-        SELECT DISTINCT
-            u.[Id],
-            u.[Id] AS [UserId],
-            u.[FirstName],
-            u.[LastName],
-            u.[Email],
-            u.[PhoneNumber],
-            u.[Role],
-            u.[IsActive],
-            CAST(NULL AS INT) AS [DepartmentId],
-            CAST(N'Location' AS NVARCHAR(200)) AS [DepartmentName],
-            wa.[SiteId],
-            s.[Name] AS [SiteName]
-        FROM [dbo].[RoomManagers] rm
-        INNER JOIN [dbo].[Users] u ON u.[Id] = rm.[UserId] AND u.[IsActive] = 1
-        INNER JOIN [dbo].[Rooms] r ON r.[Id] = rm.[RoomId]
-        INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
-        LEFT JOIN [dbo].[Sites] s ON s.[Id] = wa.[SiteId]
-        WHERE rm.[RoomId] = @RoomId
-        ORDER BY u.[LastName], u.[FirstName];
-        RETURN;
-    END
-
     SELECT DISTINCT
         u.[Id],
         u.[Id] AS [UserId],
@@ -2380,7 +2368,27 @@ BEGIN
     INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
     LEFT JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
     WHERE drm.[RoomId] = @RoomId
-    ORDER BY u.[LastName], u.[FirstName];
+    UNION
+    SELECT DISTINCT
+        u.[Id],
+        u.[Id] AS [UserId],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[PhoneNumber],
+        u.[Role],
+        u.[IsActive],
+        CAST(NULL AS INT) AS [DepartmentId],
+        CAST(N'Tower' AS NVARCHAR(200)) AS [DepartmentName],
+        wa.[SiteId],
+        s.[Name] AS [SiteName]
+    FROM [dbo].[WorkAreaManagers] wam
+    INNER JOIN [dbo].[Rooms] r ON r.[WorkAreaId] = wam.[WorkAreaId]
+    INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
+    INNER JOIN [dbo].[Users] u ON u.[Id] = wam.[UserId] AND u.[IsActive] = 1
+    LEFT JOIN [dbo].[Sites] s ON s.[Id] = wa.[SiteId]
+    WHERE r.[Id] = @RoomId
+    ORDER BY [LastName], [FirstName];
 END
 GO
 CREATE OR ALTER PROCEDURE [dbo].[ManagerCanApprove]
@@ -2397,9 +2405,12 @@ BEGIN
 
     SELECT CAST(CASE WHEN EXISTS (
         SELECT 1
-        FROM [dbo].[RoomManagers] rm
-        WHERE rm.[UserId] = @ApproverUserId
-          AND rm.[RoomId] = @ResolvedRoomId
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        WHERE dmm.[UserId] = @ApproverUserId
+          AND @DepartmentId IS NOT NULL
+          AND @DepartmentId > 0
+          AND dmm.[DepartmentId] = @DepartmentId
     ) OR EXISTS (
         SELECT 1
         FROM [dbo].[DepartmentManagerMapping] dmm
@@ -2407,14 +2418,6 @@ BEGIN
         INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
         WHERE dmm.[UserId] = @ApproverUserId
           AND drm.[RoomId] = @ResolvedRoomId
-    ) OR EXISTS (
-        SELECT 1
-        FROM [dbo].[DepartmentManagerMapping] dmm
-        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
-        WHERE dmm.[UserId] = @ApproverUserId
-          AND @DepartmentId IS NOT NULL
-          AND @DepartmentId > 0
-          AND dmm.[DepartmentId] = @DepartmentId
     ) OR EXISTS (
         SELECT 1
         FROM [dbo].[WorkAreaManagers] wam

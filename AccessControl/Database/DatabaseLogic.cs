@@ -1898,9 +1898,16 @@ namespace AccessControl.Database
                         departmentId.Value));
             }
 
-            return _conn.ExecuteStoredProcedureAsScalarInt(
-                "ManagerCanApprove",
-                sqlParams.ToArray()) == 1;
+            try
+            {
+                return _conn.ExecuteStoredProcedureAsScalarInt(
+                    "ManagerCanApprove",
+                    sqlParams.ToArray()) == 1;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public DataTable GetRoomManagers(int roomId = 0)

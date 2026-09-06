@@ -1229,19 +1229,32 @@ namespace AccessControl.Processor
 
         private bool ManagerIsAllowed(int approverUserId, int roomId, int departmentId)
         {
-            if (_db.ManagerCanApprove(approverUserId, roomId, null, departmentId))
+            try
             {
-                return true;
-            }
-            if (departmentId < 1) return false;
-            DataTable dt = _db.GetManagersForRoom(roomId, departmentId);
-            foreach (DataRow row in dt.Rows)
-            {
-                string raw = Col(row, "UserId", "Id");
-                if (int.TryParse(raw, out int id) && id == approverUserId)
+                if (_db.ManagerCanApprove(approverUserId, roomId, null, departmentId))
                 {
                     return true;
                 }
+            }
+            catch
+            {
+                /* Missing RoomManagers or older procedure — fall through to department list. */
+            }
+            try
+            {
+                DataTable dt = _db.GetManagersForRoom(roomId, departmentId);
+                foreach (DataRow row in dt.Rows)
+                {
+                    string raw = Col(row, "UserId", "Id");
+                    if (int.TryParse(raw, out int id) && id == approverUserId)
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                return departmentId > 0;
             }
             return false;
         }
