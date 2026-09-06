@@ -212,6 +212,7 @@ CREATE TABLE [dbo].[Rooms](
 	[Name] [nvarchar](200) NULL,
 	[QrCodeIdentifier] [uniqueidentifier] NOT NULL,
 	[Description] [nvarchar](500) NULL,
+	[LocationKind] [nvarchar](30) NOT NULL,
 	[IsActive] [bit] NOT NULL,
 	[CreatedAt] [datetime2](0) NOT NULL,
  CONSTRAINT [PK_Rooms] PRIMARY KEY CLUSTERED 
@@ -565,6 +566,12 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Rooms_CreatedAt')
 BEGIN
 ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+END
+GO
+IF COL_LENGTH('dbo.Rooms', 'LocationKind') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Rooms] ADD [LocationKind] NVARCHAR(30) NOT NULL
+        CONSTRAINT [DF_Rooms_LocationKind] DEFAULT ('Apartment');
 END
 GO
 IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = N'DF_Sites_IsActive')
@@ -1746,46 +1753,24 @@ BEGIN
     IF @LocationKind IS NULL OR LTRIM(RTRIM(@LocationKind)) = ''
         SET @LocationKind = N'Apartment';
 
-    IF COL_LENGTH('dbo.Rooms', 'LocationKind') IS NULL
-    BEGIN
-        INSERT INTO [dbo].[Rooms]
-        (
-            [WorkAreaId],
-            [RoomNumber],
-            [Name],
-            [Description],
-            [QrCodeIdentifier]
-        )
-        VALUES
-        (
-            @WorkAreaId,
-            @RoomNumber,
-            @Name,
-            @Description,
-            NEWID()
-        );
-    END
-    ELSE
-    BEGIN
-        INSERT INTO [dbo].[Rooms]
-        (
-            [WorkAreaId],
-            [RoomNumber],
-            [Name],
-            [Description],
-            [LocationKind],
-            [QrCodeIdentifier]
-        )
-        VALUES
-        (
-            @WorkAreaId,
-            @RoomNumber,
-            @Name,
-            @Description,
-            @LocationKind,
-            NEWID()
-        );
-    END
+    INSERT INTO [dbo].[Rooms]
+    (
+        [WorkAreaId],
+        [RoomNumber],
+        [Name],
+        [Description],
+        [LocationKind],
+        [QrCodeIdentifier]
+    )
+    VALUES
+    (
+        @WorkAreaId,
+        @RoomNumber,
+        @Name,
+        @Description,
+        @LocationKind,
+        NEWID()
+    );
 
     DECLARE @Id INT = CAST(SCOPE_IDENTITY() AS INT);
 
