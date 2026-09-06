@@ -304,6 +304,7 @@
             public string RoomText { get; set; }
             public string RoomNumber { get; set; }
             public int DepartmentId { get; set; }
+            public int SiteId { get; set; }
             public string LocationKind { get; set; }
             public string Reason { get; set; }
             public string WorkType { get; set; }

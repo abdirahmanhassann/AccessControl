@@ -1625,6 +1625,7 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[RoomsGet]
     @Id INT = NULL,
     @WorkAreaId INT = NULL,
+    @SiteId INT = NULL,
     @QrCodeIdentifier UNIQUEIDENTIFIER = NULL
 AS
 BEGIN
@@ -1647,7 +1648,8 @@ BEGIN
     inner join dbo.Sites s 
     on s.id = wa.SiteId
     WHERE (@Id IS NULL OR r.[Id] = @Id)
-      AND (@WorkAreaId IS NULL OR r.[WorkAreaId] = @WorkAreaId)
+      AND (@WorkAreaId IS NULL OR @WorkAreaId = 0 OR r.[WorkAreaId] = @WorkAreaId)
+      AND (@SiteId IS NULL OR @SiteId = 0 OR wa.[SiteId] = @SiteId)
       AND (@QrCodeIdentifier IS NULL OR r.[QrCodeIdentifier] = @QrCodeIdentifier)
     ORDER BY r.[RoomNumber];
 END;
@@ -1751,14 +1753,16 @@ BEGIN
             [WorkAreaId],
             [RoomNumber],
             [Name],
-            [Description]
+            [Description],
+            [QrCodeIdentifier]
         )
         VALUES
         (
             @WorkAreaId,
             @RoomNumber,
             @Name,
-            @Description
+            @Description,
+            NEWID()
         );
     END
     ELSE
@@ -1769,7 +1773,8 @@ BEGIN
             [RoomNumber],
             [Name],
             [Description],
-            [LocationKind]
+            [LocationKind],
+            [QrCodeIdentifier]
         )
         VALUES
         (
@@ -1777,7 +1782,8 @@ BEGIN
             @RoomNumber,
             @Name,
             @Description,
-            @LocationKind
+            @LocationKind,
+            NEWID()
         );
     END
 

@@ -928,7 +928,8 @@ namespace AccessControl.Processor
             int workAreaId = 0,
             string? roomText = null,
             int departmentId = 0,
-            string? locationKind = null)
+            string? locationKind = null,
+            int siteId = 0)
         {
             try
             {
@@ -937,10 +938,15 @@ namespace AccessControl.Processor
                     return CreateFailureResponse("A manager must be selected to approve this request.");
                 }
 
-                int resolvedRoomId = ResolveRoomId(roomId, workAreaId, roomText, locationKind);
+                int towerId = ResolveWorkAreaId(workAreaId, siteId);
+                int resolvedRoomId = ResolveRoomId(roomId, towerId, roomText, locationKind);
                 if (resolvedRoomId < 1)
                 {
-                    return CreateFailureResponse("Choose the tower and enter the room.");
+                    if (towerId < 1)
+                    {
+                        return CreateFailureResponse("Choose the site and enter the room.");
+                    }
+                    return CreateFailureResponse("Could not save that room on the selected site.");
                 }
 
                 EnsureDepartmentRoomLink(departmentId, resolvedRoomId);
@@ -1020,6 +1026,36 @@ namespace AccessControl.Processor
             }
         }
 
+        private int ResolveWorkAreaId(int workAreaId, int siteId)
+        {
+            DataTable all = _db.GetWorkAreas();
+            if (workAreaId > 0)
+            {
+                foreach (DataRow row in all.Rows)
+                {
+                    if (Convert.ToInt32(row["Id"]) == workAreaId)
+                    {
+                        return workAreaId;
+                    }
+                }
+                DataTable asSite = _db.GetWorkAreas(workAreaId);
+                if (asSite.Rows.Count == 1)
+                {
+                    return Convert.ToInt32(asSite.Rows[0]["Id"]);
+                }
+            }
+            int site = siteId > 0 ? siteId : 0;
+            if (site > 0)
+            {
+                DataTable onSite = _db.GetWorkAreas(site);
+                if (onSite.Rows.Count == 1)
+                {
+                    return Convert.ToInt32(onSite.Rows[0]["Id"]);
+                }
+            }
+            return 0;
+        }
+
         private int ResolveRoomId(int roomId, int workAreaId, string? roomText, string? locationKind)
         {
             if (roomId > 0)
@@ -1047,20 +1083,23 @@ namespace AccessControl.Processor
             var parsed = ParseEnteredRoom(typed, locationKind);
             try
             {
-                return _db.InsertRoom(
+                int created = _db.InsertRoom(
                     workAreaId,
                     parsed.Number,
                     parsed.Name,
                     "Created from worker access request",
                     parsed.Kind);
+                if (created > 0) return created;
             }
             catch
             {
                 DataTable again = _db.GetRooms(null, workAreaId);
                 int existing = MatchRoomId(again, typed);
                 if (existing > 0) return existing;
-                throw;
             }
+
+            DataTable after = _db.GetRooms(null, workAreaId);
+            return MatchRoomId(after, typed);
         }
 
         private static int MatchRoomId(DataTable rooms, string query)

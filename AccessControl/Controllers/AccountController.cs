@@ -720,7 +720,8 @@ namespace AccessControl.Controllers
                 req.WorkAreaId,
                 string.IsNullOrWhiteSpace(req.RoomText) ? req.RoomNumber : req.RoomText,
                 req.DepartmentId,
-                req.LocationKind);
+                req.LocationKind,
+                req.SiteId);
 
             return JsonConvert.SerializeObject(
                 ret,

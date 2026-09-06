@@ -600,6 +600,25 @@ namespace AccessControl.Database
             catch
             {
                 created = null;
+                try
+                {
+                    List<SqlParameter> retry = new();
+                    foreach (SqlParameter p in sqlParams)
+                    {
+                        if (string.Equals(p.ParameterName, "@LocationKind", StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+                        retry.Add(new SqlParameter(p.ParameterName, p.SqlDbType, p.Size) { Value = p.Value });
+                    }
+                    created = _conn.ExecuteStoredProcedureAsDataRow(
+                        "RoomsInsert",
+                        retry.ToArray());
+                }
+                catch
+                {
+                    created = null;
+                }
             }
             if (created != null && created.Table.Columns.Contains("Id") && created["Id"] != DBNull.Value)
             {

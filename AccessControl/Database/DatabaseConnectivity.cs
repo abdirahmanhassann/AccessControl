@@ -210,7 +210,7 @@ namespace AccessControl.Database
             }
             else
             {
-                return table.Rows.Count == 1 ? table.Rows[0] : null!;
+                return table.Rows.Count > 0 ? table.Rows[0] : null!;
             }
         }
 
