@@ -374,13 +374,9 @@
         {
             public string Token { get; set; }
             public int AccessRequestId { get; set; }
-            public string StoragePath { get; set; }
-            public string OriginalFileName { get; set; }
-            public string ContentType { get; set; }
-            public int FileSize { get; set; }
-            public int UploadedByWorkerId { get; set; }
-            public DateTime CapturedAt { get; set; }
             public string PhotoType { get; set; }
+            public int UploadedByWorkerId { get; set; }
+            public IFormFile File { get; set; }
         }
 
         public struct UpdateAccessPhotoRequest

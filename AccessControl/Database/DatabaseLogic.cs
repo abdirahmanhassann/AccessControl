@@ -408,7 +408,7 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-        public DataTable GetWorkers(int? id, string? phoneNumber = null)
+        public DataTable GetWorkers(int? id, string? phoneNumber)
         {
             List<SqlParameter> sqlParams = new();
             if (id > 0)

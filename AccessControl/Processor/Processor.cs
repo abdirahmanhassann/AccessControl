@@ -15,10 +15,11 @@ namespace AccessControl.Processor
     {
         private IConfiguration _config;
         private DatabaseLogic _db;
-
-        public AccessProcessor(IConfiguration config)
+        private IWebHostEnvironment _env;
+        public AccessProcessor(IConfiguration config, IWebHostEnvironment env)
         {
             _config = config;
+            _env = env;
             _db = new(
                 config.GetSection("ConnectionStrings:AccessControlDB").Get<string>()!,
                 false);
@@ -563,7 +564,7 @@ namespace AccessControl.Processor
         {
             try
             {
-                DataTable dt = _db.GetWorkers(null);
+                DataTable dt = _db.GetWorkers(userId,null);
 
                 return CreateSuccessResponseWithData(dt);
             }
@@ -609,7 +610,7 @@ namespace AccessControl.Processor
                     phoneNumber.Trim(),
                     companyName);
 
-                DataTable created = _db.GetWorkers(workerId);
+                DataTable created = _db.GetWorkers(workerId,null);
                 return CreateSuccessResponseWithData(created);
             }
             catch (Exception ex)
@@ -967,14 +968,22 @@ namespace AccessControl.Processor
                     workFrom,
                     workTo);
                 _db.InsertAccessRequestApproval(dr, approverUserId);
+
+                DataRow worker = _db.GetWorkers(workerId, null).Rows[0];
+                string workerFirstName = worker.Field<string>("FirstName")!;
+                string workerLastName = worker.Field<string>("LastName")!;
+                
+                DataRow approver = _db.GetUsers(approverUserId).Rows[0];
+                string approverFirstName = approver.Field<string>("FirstName")!;
+                string approverLastName = approver.Field<string>("LastName")!;
                 _db.InsertAuditEvent(
                     dr,
                     workerId,
                     approverUserId,
                     "AccessRequested",
-                    $"Worker #{workerId} submitted access request #{dr} for manager #{approverUserId}.");
+                    $"Worker {workerFirstName} {workerLastName} submitted access request #{dr} for manager {approverFirstName} {approverLastName}.");
 
-                DataTable dt = _db.GetWorkers(workerId);
+                DataTable dt = _db.GetWorkers(workerId,null);
                 DataTable dt2 = _db.GetRooms(resolvedRoomId);
                 string firstname = "", lastname = "", sitename = "", workareaname = "", roomname = "";
                 if (dt.Rows.Count > 0)
@@ -1001,7 +1010,7 @@ namespace AccessControl.Processor
                     if (!string.IsNullOrWhiteSpace(managerPhone))
                     {
                         TwilioHelper twilio = new();
-                        await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, managerPhone);
+                    //   await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, managerPhone);
                     }
                 }
                 catch (Exception smsEx)
@@ -1429,24 +1438,28 @@ namespace AccessControl.Processor
                         null);
                 }
 
+                DataRow approver = _db.GetUsers(approverUserId).Rows[0];
+                string approverFirstName = approver.Field<string>("FirstName")!;
+                string approverLastName = approver.Field<string>("LastName")!;
+
                 _db.InsertAuditEvent(
                     accessRequestId > 0 ? accessRequestId : null,
                     workerId,
                     approverUserId,
                     normalized,
-                    $"Manager #{approverUserId} marked request #{accessRequestId} as {normalized}.");
+                    $"Manager #{approverFirstName} {approverLastName} marked request #{accessRequestId} as {normalized}.");
 
                 DataRow dr = _db.GetRoomByAccessRequestId(accessRequestId);
                 if (dr != null)
                 {
                     string phone = dr.Table.Columns.Contains("PhoneNumber") ? dr.Field<string>("PhoneNumber") ?? "" : "";
-                    string roomName = dr.Table.Columns.Contains("Name") ? dr.Field<string>("Name") ?? "" : "";
+                    string roomName = dr.Table.Columns.Contains("RoomNumber") ? dr.Field<string>("RoomNumber") ?? "" : "";
                     if (!string.IsNullOrWhiteSpace(phone))
                     {
                         try
                         {
                             TwilioHelper twilio = new();
-                            await twilio.StatusUpdateAsync(normalized.ToLowerInvariant(), phone, roomName, comment ?? "");
+                           /// await twilio.StatusUpdateAsync(normalized.ToLowerInvariant(), phone, roomName, comment ?? "");
                         }
                         catch (Exception smsEx)
                         {
@@ -1491,30 +1504,55 @@ namespace AccessControl.Processor
             }
         }
 
-        public GenericResponse InsertAccessPhoto(
+        public async Task<GenericResponse> InsertAccessPhoto(
             int userId,
             int accessRequestId,
-            string storagePath,
-            string originalFileName,
-            string contentType,
-            int fileSize,
+            string photoType,
             int uploadedByWorkerId,
-            DateTime capturedAt,
-            string photoType)
+            IFormFile file)
         {
             try
             {
+                string publicBaseUrl = _config["PublicApiBaseUrl"]!;
+
+                if (file == null || file.Length == 0)
+                    return CreateFailureResponse("No file");
+                if (file.Length > 10_000_000)
+                    return CreateFailureResponse("File too large");
+                if (string.IsNullOrEmpty(file.ContentType) || !file.ContentType.StartsWith("image/"))
+                    return CreateFailureResponse("Images only");
+
+                // optional: check request exists / worker owns it via _db
+
+                var ext = Path.GetExtension(file.FileName);
+                if (string.IsNullOrEmpty(ext) || ext.Length > 5) ext = ".jpg";
+                var safeName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
+
+                var webRoot = _env.WebRootPath; // inject IWebHostEnvironment
+                var dir = Path.Combine(webRoot, "uploads", accessRequestId.ToString());
+                Directory.CreateDirectory(dir);
+                var physicalPath = Path.Combine(dir, safeName);
+
+                await using (var stream = System.IO.File.Create(physicalPath))
+                    await file.CopyToAsync(stream);
+
+                var baseUrl = (publicBaseUrl ?? "").TrimEnd('/');
+                if (string.IsNullOrEmpty(baseUrl))
+                    return CreateFailureResponse("PublicApiBaseUrl is not configured");
+
+                var storagePath = $"{baseUrl}/uploads/{accessRequestId}/{safeName}";
+
                 _db.InsertAccessPhoto(
                     accessRequestId,
                     storagePath,
-                    originalFileName,
-                    contentType,
-                    fileSize,
+                    file.FileName,
+                    file.ContentType,
+                    (int)file.Length,
                     uploadedByWorkerId,
-                    capturedAt,
-                    photoType);
+                    DateTime.UtcNow,
+                    string.IsNullOrWhiteSpace(photoType) ? "ClockOut" : photoType);
 
-                return CreateSuccessResponseNoData();
+                return CreateSuccessResponseWithData(storagePath);
             }
             catch (Exception ex)
             {
@@ -1523,7 +1561,6 @@ namespace AccessControl.Processor
                     MethodBase.GetCurrentMethod()?.Name!,
                     ex.Message + " " + ex.StackTrace,
                     userId);
-
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }

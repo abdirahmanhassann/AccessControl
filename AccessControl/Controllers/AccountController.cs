@@ -1,5 +1,6 @@
 using AccessControl.Processor;
 using AccessControl.Security;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -16,11 +17,10 @@ namespace AccessControl.Controllers
     {
         private AccessProcessor _proc;
         private Encryptor _security;
-
-        public AccessController(IConfiguration config)
+        public AccessController(IConfiguration config, IWebHostEnvironment env)
         {
-            _proc = new AccessProcessor(config);
             _security = new(config);
+            _proc = new AccessProcessor(config,env);
         }
 
         [HttpPost("login")]
@@ -901,35 +901,28 @@ namespace AccessControl.Controllers
 
 
         [HttpPost("insertaccessphoto")]
-        public string InsertAccessPhoto(
-            InsertAccessPhotoRequest req)
+        [RequestSizeLimit(10_000_000)]
+        public async Task<string> InsertAccessPhoto([FromForm] InsertAccessPhotoRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
+                    int accountId = _security.CheckToken(req.Token);
 
-            if (accountId < 1)
-            {
-                return JsonConvert.SerializeObject(
-                    new GenericResponse()
+                    if (accountId < 1)
                     {
-                        Result = false,
-                        ErrorMessage = TOKEN_ERROR
-                    });
-            }
-
-            GenericResponse ret = _proc.InsertAccessPhoto(
-                (int)accountId,
-                req.AccessRequestId,
-                req.StoragePath,
-                req.OriginalFileName,
-                req.ContentType,
-                req.FileSize,
-                req.UploadedByWorkerId,
-                req.CapturedAt,
-                req.PhotoType);
-
-            return JsonConvert.SerializeObject(
-                ret,
-                Newtonsoft.Json.Formatting.Indented);
+                        return JsonConvert.SerializeObject(
+                            new GenericResponse()
+                            {
+                                Result = false,
+                                ErrorMessage = TOKEN_ERROR
+                            });
+                    }
+                    
+                    GenericResponse res =  await _proc.InsertAccessPhoto(
+                        accountId,
+                        req.AccessRequestId,
+                        req.PhotoType,
+                        req.UploadedByWorkerId,
+                        req.File);
+         return JsonConvert.SerializeObject(res);
         }
 
 
