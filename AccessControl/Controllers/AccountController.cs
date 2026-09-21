@@ -904,25 +904,56 @@ namespace AccessControl.Controllers
         [RequestSizeLimit(10_000_000)]
         public async Task<string> InsertAccessPhoto([FromForm] InsertAccessPhotoRequest req)
         {
-                    int accountId = _security.CheckToken(req.Token);
+            int accountId = 0;
 
-                    if (accountId < 1)
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(req.Token))
+                {
+                    accountId = _security.CheckToken(req.Token);
+                }
+            }
+            catch
+            {
+                accountId = 0;
+            }
+
+            // A worker has no token of their own: verifying the OTP does not
+            // mint one. Authorise them by the visit instead, the same way
+            // UpdateAccessRequest already does for clock in and clock out.
+            // Without this the sign-out photo can never be uploaded, so a
+            // visit can never be closed.
+            if (accountId < 1 &&
+                !_proc.WorkerOwnsOpenRequest(
+                    req.AccessRequestId,
+                    req.UploadedByWorkerId))
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
                     {
-                        return JsonConvert.SerializeObject(
-                            new GenericResponse()
-                            {
-                                Result = false,
-                                ErrorMessage = TOKEN_ERROR
-                            });
-                    }
-                    
-                    GenericResponse res =  await _proc.InsertAccessPhoto(
-                        accountId,
-                        req.AccessRequestId,
-                        req.PhotoType,
-                        req.UploadedByWorkerId,
-                        req.File);
-         return JsonConvert.SerializeObject(res);
+                        Result = false,
+                        ErrorMessage = TOKEN_ERROR
+                    });
+            }
+
+            if (req.File == null || req.File.Length == 0)
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
+                    {
+                        Result = false,
+                        ErrorMessage = "No photo was uploaded"
+                    });
+            }
+
+            GenericResponse res = await _proc.InsertAccessPhoto(
+                accountId,
+                req.AccessRequestId,
+                req.PhotoType ?? "",
+                req.UploadedByWorkerId,
+                req.File);
+
+            return JsonConvert.SerializeObject(res);
         }
 
 
@@ -1172,9 +1203,29 @@ namespace AccessControl.Controllers
         public string InsertAuditEvent(
             InsertAuditEventRequest req)
         {
-            int accountId = _security.CheckToken(req.Token);
+            int accountId = 0;
 
-            if (accountId < 1)
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(req.Token))
+                {
+                    accountId = _security.CheckToken(req.Token);
+                }
+            }
+            catch
+            {
+                accountId = 0;
+            }
+
+            // Same tokenless worker path as the photo upload: a worker may
+            // write the ClockedIn / ClockedOut events for their own visit, and
+            // nothing else. This one does not require the visit to still be
+            // open — the ClockedOut event is written after the update that
+            // closes it.
+            if (accountId < 1 &&
+                !_proc.WorkerOwnsRequest(
+                    req.AccessRequestId ?? 0,
+                    req.WorkerId ?? 0))
             {
                 return JsonConvert.SerializeObject(
                     new GenericResponse()

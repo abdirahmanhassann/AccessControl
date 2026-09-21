@@ -16,6 +16,7 @@ namespace AccessControl.Processor
         private IConfiguration _config;
         private DatabaseLogic _db;
         private IWebHostEnvironment _env;
+        private bool _twilio;
         public AccessProcessor(IConfiguration config, IWebHostEnvironment env)
         {
             _config = config;
@@ -23,6 +24,7 @@ namespace AccessControl.Processor
             _db = new(
                 config.GetSection("ConnectionStrings:AccessControlDB").Get<string>()!,
                 false);
+            _twilio = config.GetSection("Twilio").Get<bool>()!;
         }
 
 
@@ -103,9 +105,13 @@ namespace AccessControl.Processor
                         try
                         {
                             TwilioHelper twilio = new();
-                            await twilio.SendPlainMessageAsync(
-                                phone,
-                                $"SiteGate password reset code: {code:D6}. It expires in 10 minutes.");
+                            if (_twilio)
+                            {
+
+                                await twilio.SendPlainMessageAsync(
+                                    phone,
+                                    $"SiteGate password reset code: {code:D6}. It expires in 10 minutes.");
+                            }
                         }
                         catch (Exception smsEx)
                         {
@@ -878,6 +884,103 @@ namespace AccessControl.Processor
             }
         }
 
+        /// <summary>
+        /// True when a worker may act on an access request without a staff
+        /// token: the request exists, belongs to that worker, and is an
+        /// approved visit that has not been closed yet.
+        ///
+        /// The worker side of the app has no session of its own — verifying
+        /// the OTP does not mint a token — so the photo and audit endpoints
+        /// authorise the worker by the visit, the same way
+        /// UpdateAccessRequest already does for clock in and clock out.
+        /// </summary>
+        public bool WorkerOwnsOpenRequest(
+            int accessRequestId,
+            int workerId)
+        {
+            DataRow? row = WorkerRequestRow(accessRequestId, workerId);
+
+            if (row == null)
+            {
+                return false;
+            }
+
+            string status = row.Table.Columns.Contains("Status") && row["Status"] != DBNull.Value
+                ? Convert.ToString(row["Status"]) ?? ""
+                : "";
+
+            if (!status.Equals("Approved", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // An already closed visit is not the worker's to add photos to.
+            return !row.Table.Columns.Contains("CompletedAt") ||
+                row["CompletedAt"] == DBNull.Value;
+        }
+
+        /// <summary>
+        /// True when this access request exists and belongs to this worker.
+        ///
+        /// Looser than WorkerOwnsOpenRequest on purpose: an audit event is
+        /// written after the status update that closes a visit, so requiring
+        /// the visit to still be open would drop the ClockedOut event.
+        /// </summary>
+        public bool WorkerOwnsRequest(
+            int accessRequestId,
+            int workerId)
+        {
+            return WorkerRequestRow(accessRequestId, workerId) != null;
+        }
+
+        private DataRow? WorkerRequestRow(
+            int accessRequestId,
+            int workerId)
+        {
+            try
+            {
+                if (accessRequestId < 1 || workerId < 1)
+                {
+                    return null;
+                }
+
+                DataTable dt = _db.GetAccessRequests(
+                    accessRequestId,
+                    workerId,
+                    0,
+                    null,
+                    null,
+                    0,
+                    1);
+
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return null;
+                }
+
+                DataRow row = dt.Rows[0];
+
+                if (!dt.Columns.Contains("WorkerId") ||
+                    row["WorkerId"] == DBNull.Value ||
+                    Convert.ToInt32(row["WorkerId"]) != workerId)
+                {
+                    return null;
+                }
+
+                return row;
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
+
+                return null;
+            }
+        }
+
         public GenericResponse GetAccessRequests(
             int userId,
             int id,
@@ -1007,10 +1110,10 @@ namespace AccessControl.Processor
 
                 try
                 {
-                    if (!string.IsNullOrWhiteSpace(managerPhone))
+                    if (!string.IsNullOrWhiteSpace(managerPhone) && _twilio)
                     {
                         TwilioHelper twilio = new();
-                    //   await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, managerPhone);
+                      await twilio.ApprovalRequestAsync(firstname, lastname, sitename, workareaname, roomname, managerPhone);
                     }
                 }
                 catch (Exception smsEx)
@@ -1454,12 +1557,12 @@ namespace AccessControl.Processor
                 {
                     string phone = dr.Table.Columns.Contains("PhoneNumber") ? dr.Field<string>("PhoneNumber") ?? "" : "";
                     string roomName = dr.Table.Columns.Contains("RoomNumber") ? dr.Field<string>("RoomNumber") ?? "" : "";
-                    if (!string.IsNullOrWhiteSpace(phone))
+                    if (!string.IsNullOrWhiteSpace(phone) && _twilio)
                     {
                         try
                         {
                             TwilioHelper twilio = new();
-                           /// await twilio.StatusUpdateAsync(normalized.ToLowerInvariant(), phone, roomName, comment ?? "");
+                            await twilio.StatusUpdateAsync(normalized.ToLowerInvariant(), phone, roomName, comment ?? "");
                         }
                         catch (Exception smsEx)
                         {
@@ -1677,8 +1780,10 @@ namespace AccessControl.Processor
                 TwilioHelper twilio = new();
                 int code = ApiHelper.GenerateNumericOtp();
                 //COMMENTED OOUT FOR TESTING PURPOSES. DONT WANNA WASTE TEXT CREDITS
-               // await twilio.SendMessageAsync(phoneNumber, code);
-
+                if (_twilio)
+                {
+                    await twilio.SendMessageAsync(phoneNumber, code);
+                }
                 _db.InsertOTPVerification(
                     phoneNumber,
                     code,

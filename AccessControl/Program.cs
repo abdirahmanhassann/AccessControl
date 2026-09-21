@@ -1,3 +1,5 @@
+using Microsoft.Extensions.FileProviders;
+
 var builder = WebApplication.CreateBuilder(args);
 
 foreach (var key in new[]
@@ -35,10 +37,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Access photos are written into the web root and served back from it, so it
+// has to exist: a fresh clone has no wwwroot, which leaves WebRootPath null
+// and UseStaticFiles with nothing to serve. Resolved explicitly here so the
+// upload path in AccessProcessor.InsertAccessPhoto and the URL it hands back
+// always point at the same folder.
+var webRoot = string.IsNullOrWhiteSpace(app.Environment.WebRootPath)
+    ? Path.Combine(app.Environment.ContentRootPath, "wwwroot")
+    : app.Environment.WebRootPath;
+
+Directory.CreateDirectory(webRoot);
+
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(webRoot)
+});
 app.UseAuthorization();
 app.MapControllers();
 
