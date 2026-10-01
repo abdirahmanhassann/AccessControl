@@ -2,10 +2,6 @@
 {
     public class ApiRequests
     {
-        // ============================================================
-        // GENERAL
-        // ============================================================
-
         public struct TokenOnlyRequest
         {
             public string Token { get; set; }
@@ -16,11 +12,6 @@
             public string Token { get; set; }
             public int Id { get; set; }
         }
-
-
-        // ============================================================
-        // SITES
-        // ============================================================
 
         public struct InsertSiteRequest
         {
@@ -42,11 +33,6 @@
             public bool IsActive { get; set; }
         }
 
-
-        // ============================================================
-        // WORK AREAS
-        // ============================================================
-
         public struct InsertWorkAreaRequest
         {
             public string Token { get; set; }
@@ -65,10 +51,6 @@
             public bool IsActive { get; set; }
         }
 
-
-        // ============================================================
-        // USERS
-        // ============================================================
 
         public struct InsertUserRequest
         {
@@ -148,12 +130,6 @@
             public string Password { get; set; }
         }
 
-
-
-        // ============================================================
-        // WORK AREA MANAGERS
-        // ============================================================
-
         public struct InsertWorkAreaManagerRequest
         {
             public string Token { get; set; }
@@ -171,10 +147,6 @@
             public bool IsPrimary { get; set; }
         }
 
-
-        // ============================================================
-        // WORKERS
-        // ============================================================
 
         public struct InsertWorkerRequest
         {
@@ -194,11 +166,6 @@
             public string CompanyName { get; set; }
             public bool IsActive { get; set; }
         }
-
-
-        // ============================================================
-        // ROOMS
-        // ============================================================
 
         public struct InsertRoomRequest
         {
@@ -240,11 +207,6 @@
             public bool IsPrimary { get; set; }
         }
 
-
-        // ============================================================
-        // ACCESS WINDOWS
-        // ============================================================
-
         public struct InsertAccessWindowRequest
         {
             public string Token { get; set; }
@@ -265,10 +227,6 @@
             public bool IsActive { get; set; }
         }
 
-
-        // ============================================================
-        // ACCESS REQUESTS
-        // ============================================================
 
         public struct GetAccessRequestsRequest
         {
@@ -333,11 +291,6 @@
             public DateTime? CompletedAt { get; set; }
         }
 
-
-        // ============================================================
-        // ACCESS REQUEST APPROVALS
-        // ============================================================
-
         public struct InsertAccessRequestApprovalRequest
         {
             public string Token { get; set; }
@@ -370,18 +323,6 @@
             public DateTime? RejectedAt { get; set; }
         }
 
-        // A class, not a struct: this is the one request bound with [FromForm],
-        // and MVC's complex object model binder refuses value types
-        // ("Model bound complex types must not be abstract or value types").
-        // The JSON endpoints bind through an input formatter instead, which is
-        // why the other requests can stay structs.
-        //
-        // The strings are nullable on purpose. With nullable annotations on,
-        // MVC treats a non-nullable reference property as implicitly
-        // [Required], and form binding turns an empty field into null — so a
-        // worker posting an empty Token (the normal case: the API mints none)
-        // was rejected with "The Token field is required" before the action
-        // ever ran.
         public class InsertAccessPhotoRequest
         {
             public string? Token { get; set; }
@@ -405,11 +346,6 @@
             public string PhotoType { get; set; }
         }
 
-
-        // ============================================================
-        // OTP VERIFICATIONS
-        // ============================================================
-
         public struct InsertOTPVerificationRequest
         {
             public string PhoneNumber { get; set; }
@@ -430,11 +366,6 @@
             public DateTime? VerifiedAt { get; set; }
             public int AttemptCount { get; set; }
         }
-
-
-        // ============================================================
-        // NOTIFICATIONS
-        // ============================================================
 
         public struct InsertNotificationRequest
         {

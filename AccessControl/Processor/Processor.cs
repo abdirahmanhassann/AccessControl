@@ -28,17 +28,10 @@ namespace AccessControl.Processor
         }
 
 
-        // ============================================================
-        // SITES
-        // ============================================================
         public GenericResponse Login(string email, string password)
         {
             try
             {
-
-                // ###TODO: log IP address? (for multiple account detection, new device login check)
-                // ###TODO: log browser agent? (for multiple account detection, new device login check)
-
                 DataRow dr = _db.GetAccountByEmail(email);
                 if (dr == null)
                 {
@@ -71,7 +64,7 @@ namespace AccessControl.Processor
         {
             try
             {
-                // ###TODO check for profanity in displayName or Shop
+                // ###TODO check for profanity in displayName
                 Encryptor enc = new(_config);
                 string salt = enc.GenerateRandomSalt();
                 string pwdEncrypted = enc.Encrypt(password, salt);
@@ -81,7 +74,6 @@ namespace AccessControl.Processor
             }
             catch (Exception ex)
             {
-                // We do not have a userId at this point, so log under account 0
                 _db.LogError(MethodBase.GetCurrentMethod()?.Module + "/" + MethodBase.GetCurrentMethod()?.Name!,
                     ex.Message + " " + ex.StackTrace, 0);
                 return CreateFailureResponse(GENERIC_ERROR);
@@ -282,11 +274,6 @@ namespace AccessControl.Processor
             }
         }
 
-
-        // ============================================================
-        // WORK AREAS
-        // ============================================================
-
         public GenericResponse GetWorkAreas(int userId, int siteId = 0)
         {
             try
@@ -365,10 +352,6 @@ namespace AccessControl.Processor
             }
         }
 
-
-        // ============================================================
-        // USERS
-        // ============================================================
 
         public GenericResponse GetUsers(int userId)
         {
@@ -479,11 +462,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-
-        // ============================================================
-        // WORK AREA MANAGERS
-        // ============================================================
 
         public GenericResponse GetWorkAreaManagers(int userId)
         {
@@ -663,12 +641,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-
-        // ============================================================
-        // ROOMS
-        // ============================================================
-
         public GenericResponse GetRooms(int userId, int workAreaId = 0, int siteId = 0)
         {
             try
@@ -797,11 +769,6 @@ namespace AccessControl.Processor
             }
         }
 
-
-        // ============================================================
-        // ACCESS WINDOWS
-        // ============================================================
-
         public GenericResponse GetAccessWindows(int userId)
         {
             try
@@ -883,17 +850,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-        /// <summary>
-        /// True when a worker may act on an access request without a staff
-        /// token: the request exists, belongs to that worker, and is an
-        /// approved visit that has not been closed yet.
-        ///
-        /// The worker side of the app has no session of its own — verifying
-        /// the OTP does not mint a token — so the photo and audit endpoints
-        /// authorise the worker by the visit, the same way
-        /// UpdateAccessRequest already does for clock in and clock out.
-        /// </summary>
         public bool WorkerOwnsOpenRequest(
             int accessRequestId,
             int workerId)
@@ -918,14 +874,6 @@ namespace AccessControl.Processor
             return !row.Table.Columns.Contains("CompletedAt") ||
                 row["CompletedAt"] == DBNull.Value;
         }
-
-        /// <summary>
-        /// True when this access request exists and belongs to this worker.
-        ///
-        /// Looser than WorkerOwnsOpenRequest on purpose: an audit event is
-        /// written after the status update that closes a visit, so requiring
-        /// the visit to still be open would drop the ClockedOut event.
-        /// </summary>
         public bool WorkerOwnsRequest(
             int accessRequestId,
             int workerId)
@@ -1335,7 +1283,6 @@ namespace AccessControl.Processor
             }
             catch
             {
-                // Unique constraint if two workers create the same link together.
             }
         }
 
@@ -1350,7 +1297,6 @@ namespace AccessControl.Processor
             }
             catch
             {
-                /* Missing RoomManagers or older procedure — fall through to department list. */
             }
             try
             {
@@ -1625,13 +1571,11 @@ namespace AccessControl.Processor
                 if (string.IsNullOrEmpty(file.ContentType) || !file.ContentType.StartsWith("image/"))
                     return CreateFailureResponse("Images only");
 
-                // optional: check request exists / worker owns it via _db
-
                 var ext = Path.GetExtension(file.FileName);
                 if (string.IsNullOrEmpty(ext) || ext.Length > 5) ext = ".jpg";
                 var safeName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
 
-                var webRoot = _env.WebRootPath; // inject IWebHostEnvironment
+                var webRoot = _env.WebRootPath;
                 var dir = Path.Combine(webRoot, "uploads", accessRequestId.ToString());
                 Directory.CreateDirectory(dir);
                 var physicalPath = Path.Combine(dir, safeName);
@@ -1706,11 +1650,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-
-        // ============================================================
-        // OTP VERIFICATIONS
-        // ============================================================
 
         public GenericResponse GetOTPVerifications(int userId)
         {
@@ -1836,12 +1775,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-
-        // ============================================================
-        // NOTIFICATIONS
-        // ============================================================
-
         public GenericResponse GetNotifications(int userId)
         {
             try
@@ -1936,11 +1869,6 @@ namespace AccessControl.Processor
             }
         }
 
-
-        // ============================================================
-        // AUDIT EVENTS
-        // ============================================================
-
         public GenericResponse GetAuditEvents(int userId)
         {
             try
@@ -1993,10 +1921,6 @@ namespace AccessControl.Processor
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }
-
-        // ============================================================
-        // DEPARTMENTS
-        // ============================================================
 
         public GenericResponse GetDepartments(int userId, int siteId = 0)
         {
@@ -2435,7 +2359,6 @@ namespace AccessControl.Processor
             }
             catch
             {
-                /* fall through to default window */
             }
             return DateTime.Now.AddHours(8);
         }

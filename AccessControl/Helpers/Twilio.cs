@@ -93,8 +93,6 @@ public class TwilioHelper
     }
 
 
-
-    // Use Verify service to send verification via requested channel (toNumber provided at call time)
     public async Task<VerificationResource> SendVerificationAsync(string toNumber, string channel = "sms", string fallbackChannel = null)
     {
         if (string.IsNullOrWhiteSpace(toNumber)) throw new ArgumentException(nameof(toNumber));

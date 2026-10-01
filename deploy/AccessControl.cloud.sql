@@ -1,0 +1,2713 @@
+IF DB_ID('AccessControl') IS NULL CREATE DATABASE [AccessControl]
+GO
+ALTER DATABASE [AccessControl] SET RECOVERY SIMPLE
+GO
+USE [AccessControl]
+GO
+/****** Object:  Table [dbo].[AccessPhotos]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AccessPhotos](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[AccessRequestId] [int] NOT NULL,
+	[StoragePath] [nvarchar](1000) NOT NULL,
+	[OriginalFileName] [nvarchar](255) NULL,
+	[ContentType] [nvarchar](100) NULL,
+	[FileSize] [bigint] NULL,
+	[UploadedByWorkerId] [int] NOT NULL,
+	[CapturedAt] [datetime2](0) NULL,
+	[UploadedAt] [datetime2](0) NOT NULL,
+	[PhotoType] [nvarchar](50) NOT NULL,
+ CONSTRAINT [PK_AccessPhotos] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[AccessRequestApprovals]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AccessRequestApprovals](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[AccessRequestId] [int] NOT NULL,
+	[ApproverUserId] [int] NOT NULL,
+	[Status] [nvarchar](30) NOT NULL,
+	[Comment] [nvarchar](1000) NULL,
+	[ReviewedAt] [datetime2](0) NULL,
+ CONSTRAINT [PK_AccessRequestApprovals] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[AccessRequests]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AccessRequests](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[WorkerId] [int] NULL,
+	[RoomId] [int] NOT NULL,
+	[Status] [nvarchar](30) NOT NULL,
+	[Reason] [nvarchar](500) NULL,
+	[WorkType] [nvarchar](200) NULL,
+	[Description] [nvarchar](1000) NULL,
+	[RequestedAt] [datetime2](0) NOT NULL,
+	[ApprovedAt] [datetime2](0) NULL,
+	[RejectedAt] [datetime2](0) NULL,
+	[ClockedInAt] [datetime2](0) NULL,
+	[ExpectedClockOutAt] [datetime2](0) NULL,
+	[ClockedOutAt] [datetime2](0) NULL,
+	[CompletedAt] [datetime2](0) NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[SupervisorName] [nvarchar](200) NULL,
+	[WorkFrom] [datetime2](0) NULL,
+	[WorkTo] [datetime2](0) NULL,
+ CONSTRAINT [PK_AccessRequests] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[AccessWindows]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AccessWindows](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[WorkAreaId] [int] NOT NULL,
+	[DayOfWeek] [tinyint] NOT NULL,
+	[StartTime] [time](0) NOT NULL,
+	[EndTime] [time](0) NOT NULL,
+	[IsActive] [bit] NOT NULL,
+ CONSTRAINT [PK_AccessWindows] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[AuditEvents]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AuditEvents](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[AccessRequestId] [int] NULL,
+	[WorkerId] [int] NULL,
+	[UserId] [int] NULL,
+	[EventType] [nvarchar](50) NOT NULL,
+	[Description] [nvarchar](2000) NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+	[IpAddress] [varchar](45) NULL,
+	[Metadata] [nvarchar](max) NULL,
+ CONSTRAINT [PK_AuditEvents] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[DepartmentManagerMapping]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[DepartmentManagerMapping](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[DepartmentId] [int] NOT NULL,
+	[UserId] [int] NOT NULL,
+	[IsPrimary] [bit] NOT NULL,
+	[AssignedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_DepartmentManagerMapping] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_DepartmentManagerMapping] UNIQUE NONCLUSTERED 
+(
+	[DepartmentId] ASC,
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[DepartmentRoomMapping]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[DepartmentRoomMapping](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[DepartmentId] [int] NOT NULL,
+	[RoomId] [int] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_DepartmentRoomMapping] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_DepartmentRoomMapping] UNIQUE NONCLUSTERED 
+(
+	[DepartmentId] ASC,
+	[RoomId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Departments]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Departments](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[SiteId] [int] NOT NULL,
+	[Name] [nvarchar](200) NOT NULL,
+	[Description] [nvarchar](500) NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_Departments] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Departments_Site_Name] UNIQUE NONCLUSTERED 
+(
+	[SiteId] ASC,
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ErrorLog]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ErrorLog](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[Location] [nvarchar](512) NOT NULL,
+	[ErrorMessage] [nvarchar](4000) NOT NULL,
+	[AccountId] [bigint] NOT NULL,
+	[DateStamp] [datetime] NOT NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Notifications]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Notifications](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[UserId] [int] NULL,
+	[WorkerId] [int] NULL,
+	[AccessRequestId] [int] NULL,
+	[Type] [nvarchar](50) NOT NULL,
+	[Channel] [nvarchar](30) NOT NULL,
+	[Message] [nvarchar](2000) NOT NULL,
+	[Status] [nvarchar](30) NOT NULL,
+	[SentAt] [datetime2](0) NULL,
+	[ReadAt] [datetime2](0) NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_Notifications] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[OTPVerifications]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[OTPVerifications](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[WorkerId] [int] NULL,
+	[PhoneNumber] [nvarchar](30) NOT NULL,
+	[CodeHash] [int] NOT NULL,
+	[ExpiresAt] [datetime2](0) NOT NULL,
+	[VerifiedAt] [datetime2](0) NULL,
+	[AttemptCount] [tinyint] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_OTPVerifications] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[RoomManagers]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RoomManagers](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[RoomId] [int] NOT NULL,
+	[UserId] [int] NOT NULL,
+	[IsPrimary] [bit] NOT NULL,
+	[AssignedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_RoomManagers] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_RoomManagers_Room_User] UNIQUE NONCLUSTERED 
+(
+	[RoomId] ASC,
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Rooms]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Rooms](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[WorkAreaId] [int] NOT NULL,
+	[RoomNumber] [nvarchar](100) NOT NULL,
+	[Name] [nvarchar](200) NULL,
+	[QrCodeIdentifier] [uniqueidentifier] NOT NULL,
+	[Description] [nvarchar](500) NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+	[LocationKind] [nvarchar](30) NOT NULL,
+ CONSTRAINT [PK_Rooms] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Rooms_QrCodeIdentifier] UNIQUE NONCLUSTERED 
+(
+	[QrCodeIdentifier] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Rooms_WorkArea_RoomNumber] UNIQUE NONCLUSTERED 
+(
+	[WorkAreaId] ASC,
+	[RoomNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Sites]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Sites](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](200) NOT NULL,
+	[Address] [nvarchar](500) NULL,
+	[Reference] [nvarchar](100) NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+	[QrCodeIdentifier] [nvarchar](100) NULL,
+ CONSTRAINT [PK_Sites] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Sites_Reference] UNIQUE NONCLUSTERED 
+(
+	[Reference] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Token]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Token](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[AccountId] [bigint] NOT NULL,
+	[Token] [nvarchar](50) NOT NULL,
+	[ValidTo] [datetime] NOT NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Users]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Users](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[FirstName] [nvarchar](100) NOT NULL,
+	[LastName] [nvarchar](100) NOT NULL,
+	[Email] [nvarchar](255) NOT NULL,
+	[PhoneNumber] [nvarchar](30) NULL,
+	[Role] [nvarchar](50) NOT NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+	[LastLoginAt] [datetime2](0) NULL,
+	[Password] [nvarchar](50) NOT NULL,
+	[salt] [nvarchar](50) NOT NULL,
+	[isDeleted] [bit] NOT NULL,
+ CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Users_Email] UNIQUE NONCLUSTERED 
+(
+	[Email] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorkAreaManagers]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorkAreaManagers](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[WorkAreaId] [int] NOT NULL,
+	[UserId] [int] NOT NULL,
+	[IsPrimary] [bit] NOT NULL,
+	[AssignedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_WorkAreaManagers] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_WorkAreaManagers_WorkArea_User] UNIQUE NONCLUSTERED 
+(
+	[WorkAreaId] ASC,
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorkAreas]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorkAreas](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[SiteId] [int] NOT NULL,
+	[Name] [nvarchar](200) NOT NULL,
+	[Description] [nvarchar](500) NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_WorkAreas] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_WorkAreas_Site_Name] UNIQUE NONCLUSTERED 
+(
+	[SiteId] ASC,
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Workers]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Workers](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[FirstName] [nvarchar](100) NOT NULL,
+	[LastName] [nvarchar](100) NOT NULL,
+	[PhoneNumber] [nvarchar](30) NOT NULL,
+	[CompanyName] [nvarchar](200) NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+	[LastSeenAt] [datetime2](0) NULL,
+ CONSTRAINT [PK_Workers] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorkerSiteMapping]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorkerSiteMapping](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[WorkerId] [int] NOT NULL,
+	[SiteId] [int] NOT NULL,
+	[CreatedAt] [datetime2](0) NOT NULL,
+ CONSTRAINT [PK_WorkerSiteMapping] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_WorkerSiteMapping] UNIQUE NONCLUSTERED 
+(
+	[WorkerId] ASC,
+	[SiteId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AccessPhotos_Request]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_AccessPhotos_Request] ON [dbo].[AccessPhotos]
+(
+	[AccessRequestId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AccessRequestApprovals_Request]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_AccessRequestApprovals_Request] ON [dbo].[AccessRequestApprovals]
+(
+	[AccessRequestId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AccessRequests_Active]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_AccessRequests_Active] ON [dbo].[AccessRequests]
+(
+	[ExpectedClockOutAt] ASC
+)
+WHERE ([ClockedInAt] IS NOT NULL AND [ClockedOutAt] IS NULL)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AccessRequests_RoomId]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_AccessRequests_RoomId] ON [dbo].[AccessRequests]
+(
+	[RoomId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [IX_AccessRequests_Status]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_AccessRequests_Status] ON [dbo].[AccessRequests]
+(
+	[Status] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AccessRequests_WorkerId]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_AccessRequests_WorkerId] ON [dbo].[AccessRequests]
+(
+	[WorkerId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AuditEvents_Request]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_AuditEvents_Request] ON [dbo].[AuditEvents]
+(
+	[AccessRequestId] ASC,
+	[CreatedAt] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Rooms_WorkAreaId]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_Rooms_WorkAreaId] ON [dbo].[Rooms]
+(
+	[WorkAreaId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_WorkAreaManagers_UserId]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_WorkAreaManagers_UserId] ON [dbo].[WorkAreaManagers]
+(
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_WorkAreaManagers_WorkAreaId]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_WorkAreaManagers_WorkAreaId] ON [dbo].[WorkAreaManagers]
+(
+	[WorkAreaId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_WorkAreas_SiteId]    Script Date: 26/09/2026 00:35:29 ******/
+CREATE NONCLUSTERED INDEX [IX_WorkAreas_SiteId] ON [dbo].[WorkAreas]
+(
+	[SiteId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[AccessPhotos] ADD  CONSTRAINT [DF_AccessPhotos_UploadedAt]  DEFAULT (sysutcdatetime()) FOR [UploadedAt]
+GO
+ALTER TABLE [dbo].[AccessRequests] ADD  CONSTRAINT [DF_AccessRequests_Status]  DEFAULT ('PENDING') FOR [Status]
+GO
+ALTER TABLE [dbo].[AccessRequests] ADD  CONSTRAINT [DF_AccessRequests_RequestedAt]  DEFAULT (sysutcdatetime()) FOR [RequestedAt]
+GO
+ALTER TABLE [dbo].[AccessWindows] ADD  CONSTRAINT [DF_AccessWindows_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[AuditEvents] ADD  CONSTRAINT [DF_AuditEvents_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[DepartmentManagerMapping] ADD  CONSTRAINT [DF_DepartmentManagerMapping_IsPrimary]  DEFAULT ((0)) FOR [IsPrimary]
+GO
+ALTER TABLE [dbo].[DepartmentManagerMapping] ADD  CONSTRAINT [DF_DepartmentManagerMapping_AssignedAt]  DEFAULT (sysutcdatetime()) FOR [AssignedAt]
+GO
+ALTER TABLE [dbo].[DepartmentRoomMapping] ADD  CONSTRAINT [DF_DepartmentRoomMapping_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Departments] ADD  CONSTRAINT [DF_Departments_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Departments] ADD  CONSTRAINT [DF_Departments_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Notifications] ADD  CONSTRAINT [DF_Notifications_Status]  DEFAULT ('PENDING') FOR [Status]
+GO
+ALTER TABLE [dbo].[Notifications] ADD  CONSTRAINT [DF_Notifications_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[OTPVerifications] ADD  CONSTRAINT [DF_OTPVerifications_AttemptCount]  DEFAULT ((0)) FOR [AttemptCount]
+GO
+ALTER TABLE [dbo].[RoomManagers] ADD  CONSTRAINT [DF_RoomManagers_IsPrimary]  DEFAULT ((1)) FOR [IsPrimary]
+GO
+ALTER TABLE [dbo].[RoomManagers] ADD  CONSTRAINT [DF_RoomManagers_AssignedAt]  DEFAULT (sysutcdatetime()) FOR [AssignedAt]
+GO
+ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_QrCodeIdentifier]  DEFAULT (newsequentialid()) FOR [QrCodeIdentifier]
+GO
+ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Rooms] ADD  CONSTRAINT [DF_Rooms_LocationKind]  DEFAULT ('Apartment') FOR [LocationKind]
+GO
+ALTER TABLE [dbo].[Sites] ADD  CONSTRAINT [DF_Sites_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Users] ADD  CONSTRAINT [DF_Users_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Users] ADD  CONSTRAINT [DF_Users_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Users] ADD  CONSTRAINT [DF_Users_isDeleted]  DEFAULT ((0)) FOR [isDeleted]
+GO
+ALTER TABLE [dbo].[WorkAreaManagers] ADD  CONSTRAINT [DF_WorkAreaManagers_IsPrimary]  DEFAULT ((0)) FOR [IsPrimary]
+GO
+ALTER TABLE [dbo].[WorkAreaManagers] ADD  CONSTRAINT [DF_WorkAreaManagers_AssignedAt]  DEFAULT (sysutcdatetime()) FOR [AssignedAt]
+GO
+ALTER TABLE [dbo].[WorkAreas] ADD  CONSTRAINT [DF_WorkAreas_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[WorkAreas] ADD  CONSTRAINT [DF_WorkAreas_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Workers] ADD  CONSTRAINT [DF_Workers_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Workers] ADD  CONSTRAINT [DF_Workers_CreatedAt]  DEFAULT (getdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[WorkerSiteMapping] ADD  CONSTRAINT [DF_WorkerSiteMapping_CreatedAt]  DEFAULT (sysutcdatetime()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[AccessPhotos]  WITH CHECK ADD  CONSTRAINT [FK_AccessPhotos_AccessRequests] FOREIGN KEY([AccessRequestId])
+REFERENCES [dbo].[AccessRequests] ([Id])
+GO
+ALTER TABLE [dbo].[AccessPhotos] CHECK CONSTRAINT [FK_AccessPhotos_AccessRequests]
+GO
+ALTER TABLE [dbo].[AccessPhotos]  WITH CHECK ADD  CONSTRAINT [FK_AccessPhotos_Workers] FOREIGN KEY([UploadedByWorkerId])
+REFERENCES [dbo].[Workers] ([Id])
+GO
+ALTER TABLE [dbo].[AccessPhotos] CHECK CONSTRAINT [FK_AccessPhotos_Workers]
+GO
+ALTER TABLE [dbo].[AccessRequestApprovals]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequestApprovals_AccessRequests] FOREIGN KEY([AccessRequestId])
+REFERENCES [dbo].[AccessRequests] ([Id])
+GO
+ALTER TABLE [dbo].[AccessRequestApprovals] CHECK CONSTRAINT [FK_AccessRequestApprovals_AccessRequests]
+GO
+ALTER TABLE [dbo].[AccessRequestApprovals]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequestApprovals_Users] FOREIGN KEY([ApproverUserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[AccessRequestApprovals] CHECK CONSTRAINT [FK_AccessRequestApprovals_Users]
+GO
+ALTER TABLE [dbo].[AccessRequests]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequests_Rooms] FOREIGN KEY([RoomId])
+REFERENCES [dbo].[Rooms] ([Id])
+GO
+ALTER TABLE [dbo].[AccessRequests] CHECK CONSTRAINT [FK_AccessRequests_Rooms]
+GO
+ALTER TABLE [dbo].[AccessRequests]  WITH CHECK ADD  CONSTRAINT [FK_AccessRequests_Workers] FOREIGN KEY([WorkerId])
+REFERENCES [dbo].[Workers] ([Id])
+GO
+ALTER TABLE [dbo].[AccessRequests] CHECK CONSTRAINT [FK_AccessRequests_Workers]
+GO
+ALTER TABLE [dbo].[AccessWindows]  WITH CHECK ADD  CONSTRAINT [FK_AccessWindows_WorkAreas] FOREIGN KEY([WorkAreaId])
+REFERENCES [dbo].[WorkAreas] ([Id])
+GO
+ALTER TABLE [dbo].[AccessWindows] CHECK CONSTRAINT [FK_AccessWindows_WorkAreas]
+GO
+ALTER TABLE [dbo].[AuditEvents]  WITH CHECK ADD  CONSTRAINT [FK_AuditEvents_AccessRequests] FOREIGN KEY([AccessRequestId])
+REFERENCES [dbo].[AccessRequests] ([Id])
+GO
+ALTER TABLE [dbo].[AuditEvents] CHECK CONSTRAINT [FK_AuditEvents_AccessRequests]
+GO
+ALTER TABLE [dbo].[AuditEvents]  WITH CHECK ADD  CONSTRAINT [FK_AuditEvents_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[AuditEvents] CHECK CONSTRAINT [FK_AuditEvents_Users]
+GO
+ALTER TABLE [dbo].[AuditEvents]  WITH CHECK ADD  CONSTRAINT [FK_AuditEvents_Workers] FOREIGN KEY([WorkerId])
+REFERENCES [dbo].[Workers] ([Id])
+GO
+ALTER TABLE [dbo].[AuditEvents] CHECK CONSTRAINT [FK_AuditEvents_Workers]
+GO
+ALTER TABLE [dbo].[DepartmentManagerMapping]  WITH CHECK ADD  CONSTRAINT [FK_DepartmentManagerMapping_Departments] FOREIGN KEY([DepartmentId])
+REFERENCES [dbo].[Departments] ([Id])
+GO
+ALTER TABLE [dbo].[DepartmentManagerMapping] CHECK CONSTRAINT [FK_DepartmentManagerMapping_Departments]
+GO
+ALTER TABLE [dbo].[DepartmentManagerMapping]  WITH CHECK ADD  CONSTRAINT [FK_DepartmentManagerMapping_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[DepartmentManagerMapping] CHECK CONSTRAINT [FK_DepartmentManagerMapping_Users]
+GO
+ALTER TABLE [dbo].[DepartmentRoomMapping]  WITH CHECK ADD  CONSTRAINT [FK_DepartmentRoomMapping_Departments] FOREIGN KEY([DepartmentId])
+REFERENCES [dbo].[Departments] ([Id])
+GO
+ALTER TABLE [dbo].[DepartmentRoomMapping] CHECK CONSTRAINT [FK_DepartmentRoomMapping_Departments]
+GO
+ALTER TABLE [dbo].[DepartmentRoomMapping]  WITH CHECK ADD  CONSTRAINT [FK_DepartmentRoomMapping_Rooms] FOREIGN KEY([RoomId])
+REFERENCES [dbo].[Rooms] ([Id])
+GO
+ALTER TABLE [dbo].[DepartmentRoomMapping] CHECK CONSTRAINT [FK_DepartmentRoomMapping_Rooms]
+GO
+ALTER TABLE [dbo].[Departments]  WITH CHECK ADD  CONSTRAINT [FK_Departments_Sites] FOREIGN KEY([SiteId])
+REFERENCES [dbo].[Sites] ([Id])
+GO
+ALTER TABLE [dbo].[Departments] CHECK CONSTRAINT [FK_Departments_Sites]
+GO
+ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [FK_Notifications_AccessRequests] FOREIGN KEY([AccessRequestId])
+REFERENCES [dbo].[AccessRequests] ([Id])
+GO
+ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [FK_Notifications_AccessRequests]
+GO
+ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [FK_Notifications_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [FK_Notifications_Users]
+GO
+ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [FK_Notifications_Workers] FOREIGN KEY([WorkerId])
+REFERENCES [dbo].[Workers] ([Id])
+GO
+ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [FK_Notifications_Workers]
+GO
+ALTER TABLE [dbo].[OTPVerifications]  WITH CHECK ADD  CONSTRAINT [FK_OTPVerifications_Workers] FOREIGN KEY([WorkerId])
+REFERENCES [dbo].[Workers] ([Id])
+GO
+ALTER TABLE [dbo].[OTPVerifications] CHECK CONSTRAINT [FK_OTPVerifications_Workers]
+GO
+ALTER TABLE [dbo].[WorkAreaManagers]  WITH CHECK ADD  CONSTRAINT [FK_WorkAreaManagers_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[WorkAreaManagers] CHECK CONSTRAINT [FK_WorkAreaManagers_Users]
+GO
+ALTER TABLE [dbo].[WorkAreaManagers]  WITH CHECK ADD  CONSTRAINT [FK_WorkAreaManagers_WorkAreas] FOREIGN KEY([WorkAreaId])
+REFERENCES [dbo].[WorkAreas] ([Id])
+GO
+ALTER TABLE [dbo].[WorkAreaManagers] CHECK CONSTRAINT [FK_WorkAreaManagers_WorkAreas]
+GO
+ALTER TABLE [dbo].[WorkAreas]  WITH CHECK ADD  CONSTRAINT [FK_WorkAreas_Sites] FOREIGN KEY([SiteId])
+REFERENCES [dbo].[Sites] ([Id])
+GO
+ALTER TABLE [dbo].[WorkAreas] CHECK CONSTRAINT [FK_WorkAreas_Sites]
+GO
+ALTER TABLE [dbo].[WorkerSiteMapping]  WITH CHECK ADD  CONSTRAINT [FK_WorkerSiteMapping_Sites] FOREIGN KEY([SiteId])
+REFERENCES [dbo].[Sites] ([Id])
+GO
+ALTER TABLE [dbo].[WorkerSiteMapping] CHECK CONSTRAINT [FK_WorkerSiteMapping_Sites]
+GO
+ALTER TABLE [dbo].[WorkerSiteMapping]  WITH CHECK ADD  CONSTRAINT [FK_WorkerSiteMapping_Workers] FOREIGN KEY([WorkerId])
+REFERENCES [dbo].[Workers] ([Id])
+GO
+ALTER TABLE [dbo].[WorkerSiteMapping] CHECK CONSTRAINT [FK_WorkerSiteMapping_Workers]
+GO
+ALTER TABLE [dbo].[AccessRequestApprovals]  WITH CHECK ADD  CONSTRAINT [CK_AccessRequestApprovals_Status] CHECK  (([Status]='REJECTED' OR [Status]='APPROVED' OR [Status]='PENDING' OR [Status]='CANCELLED'))
+GO
+ALTER TABLE [dbo].[AccessRequestApprovals] CHECK CONSTRAINT [CK_AccessRequestApprovals_Status]
+GO
+ALTER TABLE [dbo].[AccessRequests]  WITH CHECK ADD  CONSTRAINT [CK_AccessRequests_Status] CHECK  (([Status]='CANCELLED' OR [Status]='COMPLETED' OR [Status]='ACTIVE' OR [Status]='REJECTED' OR [Status]='APPROVED' OR [Status]='PENDING'))
+GO
+ALTER TABLE [dbo].[AccessRequests] CHECK CONSTRAINT [CK_AccessRequests_Status]
+GO
+ALTER TABLE [dbo].[AccessWindows]  WITH CHECK ADD  CONSTRAINT [CK_AccessWindows_DayOfWeek] CHECK  (([DayOfWeek]>=(1) AND [DayOfWeek]<=(7)))
+GO
+ALTER TABLE [dbo].[AccessWindows] CHECK CONSTRAINT [CK_AccessWindows_DayOfWeek]
+GO
+ALTER TABLE [dbo].[AccessWindows]  WITH CHECK ADD  CONSTRAINT [CK_AccessWindows_Time] CHECK  (([StartTime]<[EndTime]))
+GO
+ALTER TABLE [dbo].[AccessWindows] CHECK CONSTRAINT [CK_AccessWindows_Time]
+GO
+ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [CK_Notifications_Channel] CHECK  (([Channel]='IN_APP' OR [Channel]='EMAIL' OR [Channel]='SMS'))
+GO
+ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [CK_Notifications_Channel]
+GO
+ALTER TABLE [dbo].[Notifications]  WITH CHECK ADD  CONSTRAINT [CK_Notifications_Status] CHECK  (([Status]='READ' OR [Status]='FAILED' OR [Status]='SENT' OR [Status]='PENDING'))
+GO
+ALTER TABLE [dbo].[Notifications] CHECK CONSTRAINT [CK_Notifications_Status]
+GO
+ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CK_Users_Role] CHECK  (([Role]='Admin' OR [Role]='Manager' OR [Role]='Worker'))
+GO
+ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CK_Users_Role]
+GO
+/****** Object:  StoredProcedure [dbo].[AccessPhotosGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessPhotosGet]
+    @Id INT = NULL,
+    @AccessRequestId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        ap.[Id],
+        ap.[AccessRequestId],
+        ap.[StoragePath],
+        ap.[OriginalFileName],
+        ap.[ContentType],
+        ap.[FileSize],
+        ap.[UploadedByWorkerId],
+        ap.[CapturedAt],
+        ap.[UploadedAt],
+        ap.[PhotoType]
+    FROM [dbo].[AccessPhotos] ap
+    WHERE (@Id IS NULL OR ap.[Id] = @Id)
+      AND (@AccessRequestId IS NULL OR ap.[AccessRequestId] = @AccessRequestId)
+    ORDER BY ap.[UploadedAt];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessPhotosInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessPhotosInsert]
+    @AccessRequestId INT,
+    @StoragePath NVARCHAR(1000),
+    @OriginalFileName NVARCHAR(255) = NULL,
+    @ContentType NVARCHAR(100) = NULL,
+    @FileSize BIGINT = NULL,
+    @UploadedByWorkerId INT,
+    @CapturedAt DATETIME2(0) = NULL,
+    @PhotoType NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[AccessPhotos]
+    (
+        [AccessRequestId],
+        [StoragePath],
+        [OriginalFileName],
+        [ContentType],
+        [FileSize],
+        [UploadedByWorkerId],
+        [CapturedAt],
+        [PhotoType]
+    )
+    VALUES
+    (
+        @AccessRequestId,
+        @StoragePath,
+        @OriginalFileName,
+        @ContentType,
+        @FileSize,
+        @UploadedByWorkerId,
+        @CapturedAt,
+        @PhotoType
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessPhotosUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessPhotosUpdate]
+    @Id INT,
+    @StoragePath NVARCHAR(1000),
+    @OriginalFileName NVARCHAR(255) = NULL,
+    @ContentType NVARCHAR(100) = NULL,
+    @FileSize BIGINT = NULL,
+    @CapturedAt DATETIME2(0) = NULL,
+    @PhotoType NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[AccessPhotos]
+    SET
+        [StoragePath] = @StoragePath,
+        [OriginalFileName] = @OriginalFileName,
+        [ContentType] = @ContentType,
+        [FileSize] = @FileSize,
+        [CapturedAt] = @CapturedAt,
+        [PhotoType] = @PhotoType
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessRequestApprovalsGet]
+    @Id INT = NULL,
+    @AccessRequestId INT = NULL,
+    @ApproverUserId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        ara.[Id],
+        ara.[AccessRequestId],
+        ara.[ApproverUserId],
+        u.[FirstName] as [ApproverFirstName],
+        u.[LastName] as [ApproverLastName],
+        u.[Email] as [ApproverEmail],
+        w.[FirstName] as [WorkerFirstName],
+        w.[LastName] as [WorkerLastName],
+        w.[PhoneNumber] as [WorkerPhoneNumber],
+        ara.[Status],
+        ara.[Comment],
+        ara.[ReviewedAt],
+        ar.[CreatedAt] as [AccessrequestCreatedAt]
+    FROM [dbo].[AccessRequestApprovals] ara
+    INNER JOIN [dbo].[Users] u
+        ON u.[Id] = ara.[ApproverUserId]
+    INNER JOIN [dbo].[AccessRequests] ar
+        ON ar.id = ara.AccessRequestId
+    INNER JOIN [dbo].[Workers] w 
+        ON w.id = ar.WorkerId
+    WHERE (@Id IS NULL OR ara.[Id] = @Id)
+      AND (@AccessRequestId IS NULL OR ara.[AccessRequestId] = @AccessRequestId)
+      AND (@ApproverUserId IS NULL OR ara.[ApproverUserId] = @ApproverUserId)
+    ORDER BY ar.[CreatedAt] DESC;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessRequestApprovalsInsert]
+    @AccessRequestId INT,
+    @ApproverUserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[AccessRequestApprovals]
+    (
+        [AccessRequestId],
+        [ApproverUserId],
+        [Status]
+    )
+    VALUES
+    (
+        @AccessRequestId,
+        @ApproverUserId,
+        'PENDING'
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessRequestApprovalsUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessRequestApprovalsUpdate]
+    @Id INT,
+    @Status NVARCHAR(30),
+    @Comment NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[AccessRequestApprovals]
+    SET
+        [Status] = @Status,
+        [Comment] = @Comment,
+         ReviewedAt = GETDATE()
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessRequestsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessRequestsGet]
+    @Id INT = NULL,
+    @WorkerId INT = NULL,
+    @RoomId INT = NULL,
+    @Status NVARCHAR(30) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        ar.[Id],
+
+        ar.[WorkerId],
+        w.[FirstName] AS [WorkerFirstName],
+        w.[LastName] AS [WorkerLastName],
+        w.[PhoneNumber] AS [WorkerPhoneNumber],
+        w.[CompanyName],
+
+        ar.[RoomId],
+        r.[RoomNumber],
+        r.[Name] AS [RoomName],
+
+        wa.[Id] AS [WorkAreaId],
+        wa.[Name] AS [WorkAreaName],
+
+        ar.[Status],
+        ar.[Reason],
+        ar.[WorkType],
+        ar.[Description],
+        ar.[RequestedAt],
+        ar.[ApprovedAt],
+        ar.[RejectedAt],
+        ar.[ClockedInAt],
+        ar.[ExpectedClockOutAt],
+        ar.[ClockedOutAt],
+        ar.[CompletedAt],
+        ar.[WorkFrom],
+        ar.[WorkTo]
+
+    FROM [dbo].[AccessRequests] ar
+
+    INNER JOIN [dbo].[Workers] w
+        ON w.[Id] = ar.[WorkerId]
+
+    LEFT JOIN [dbo].[Rooms] r
+        ON r.[Id] = ar.[RoomId]
+
+    LEFT JOIN [dbo].[WorkAreas] wa
+        ON wa.[Id] = r.[WorkAreaId]
+
+    WHERE (@Id IS NULL OR ar.[Id] = @Id)
+      AND (@WorkerId IS NULL OR ar.[WorkerId] = @WorkerId)
+      AND (@RoomId IS NULL or @RoomId = 0 OR ar.[RoomId] = @RoomId)
+      AND (@Status IS NULL OR ar.[Status] = @Status)
+
+    ORDER BY ar.[RequestedAt] DESC;
+END;
+
+GO
+/****** Object:  StoredProcedure [dbo].[AccessRequestsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessRequestsInsert]
+    @WorkerId INT = NULL,
+    @PhoneNumber nvarchar (30) = NULL,
+    @RoomId INT,
+    @Reason NVARCHAR(500) = NULL,
+    @WorkType NVARCHAR(200) = NULL,
+    @Description NVARCHAR(1000) = NULL,
+    @SupervisorName NVARCHAR(200) = NULL,
+    @WorkFrom DATETIME2(0) = NULL,
+    @WorkTo DATETIME2(0) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[AccessRequests]
+    (
+        [WorkerId],
+        [RoomId],
+        [Reason],
+        [WorkType],
+        [Description],
+        [SupervisorName],
+        [WorkFrom],
+        [WorkTo],
+        [ExpectedClockOutAt],
+        [CreatedAt]
+    )
+    VALUES
+    (
+        @WorkerId,
+        @RoomId,
+        @Reason,
+        @WorkType,
+        @Description,
+        @SupervisorName,
+        @WorkFrom,
+        @WorkTo,
+        @WorkTo,
+        GETDATE()
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessRequestsUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessRequestsUpdate]
+    @Id INT,
+    @Status NVARCHAR(30),
+    @Reason NVARCHAR(500) = NULL,
+    @WorkType NVARCHAR(200) = NULL,
+    @Description NVARCHAR(1000) = NULL,
+    @ApprovedAt DATETIME2(0) = NULL,
+    @RejectedAt DATETIME2(0) = NULL,
+    @ClockedInAt DATETIME2(0) = NULL,
+    @ExpectedClockOutAt DATETIME2(0) = NULL,
+    @ClockedOutAt DATETIME2(0) = NULL,
+    @CompletedAt DATETIME2(0) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[AccessRequests]
+    SET
+        [Status] = @Status,
+        [Reason] = ISNULL(@Reason, [Reason]),
+        [WorkType] = ISNULL(@WorkType, [WorkType]),
+        [Description] = ISNULL(@Description, [Description]),
+        [ApprovedAt] = ISNULL(@ApprovedAt, [ApprovedAt]),
+        [RejectedAt] = ISNULL(@RejectedAt, [RejectedAt]),
+        [ClockedInAt] = ISNULL(@ClockedInAt, [ClockedInAt]),
+        [ExpectedClockOutAt] = ISNULL(@ExpectedClockOutAt, [ExpectedClockOutAt]),
+        [ClockedOutAt] = ISNULL(@ClockedOutAt, [ClockedOutAt]),
+        [CompletedAt] = ISNULL(@CompletedAt, [CompletedAt])
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessWindowsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessWindowsGet]
+    @Id INT = NULL,
+    @WorkAreaId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        aw.[Id],
+        aw.[WorkAreaId],
+        wa.[Name] AS [WorkAreaName],
+        aw.[DayOfWeek],
+        aw.[StartTime],
+        aw.[EndTime],
+        aw.[IsActive]
+    FROM [dbo].[AccessWindows] aw
+    INNER JOIN [dbo].[WorkAreas] wa
+        ON wa.[Id] = aw.[WorkAreaId]
+    WHERE (@Id IS NULL OR aw.[Id] = @Id)
+      AND (@WorkAreaId IS NULL OR aw.[WorkAreaId] = @WorkAreaId)
+    ORDER BY aw.[WorkAreaId], aw.[DayOfWeek], aw.[StartTime];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessWindowsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessWindowsInsert]
+    @WorkAreaId INT,
+    @DayOfWeek TINYINT,
+    @StartTime TIME(0),
+    @EndTime TIME(0)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[AccessWindows]
+    (
+        [WorkAreaId],
+        [DayOfWeek],
+        [StartTime],
+        [EndTime]
+    )
+    VALUES
+    (
+        @WorkAreaId,
+        @DayOfWeek,
+        @StartTime,
+        @EndTime
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AccessWindowsUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AccessWindowsUpdate]
+    @Id INT,
+    @WorkAreaId INT,
+    @DayOfWeek TINYINT,
+    @StartTime TIME(0),
+    @EndTime TIME(0),
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[AccessWindows]
+    SET
+        [WorkAreaId] = @WorkAreaId,
+        [DayOfWeek] = @DayOfWeek,
+        [StartTime] = @StartTime,
+        [EndTime] = @EndTime,
+        [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AddAccessToken]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AddAccessToken]
+	@AccountId bigint,
+	@Token nvarchar(50)
+AS
+BEGIN
+	INSERT INTO Token VALUES (@AccountId, @Token, DATEADD(DD, 7, GETDATE()))
+	UPDATE Users SET LastLoginAt = GETDATE() WHERE Id = @AccountId
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AuditEventsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AuditEventsGet]
+    @Id BIGINT = NULL,
+    @AccessRequestId INT = NULL,
+    @WorkerId INT = NULL,
+    @UserId INT = NULL,
+    @EventType NVARCHAR(50) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        [Id],
+        [AccessRequestId],
+        [WorkerId],
+        [UserId],
+        [EventType],
+        [Description],
+        [CreatedAt],
+        [IpAddress],
+        [Metadata]
+    FROM [dbo].[AuditEvents]
+    WHERE (@Id IS NULL OR [Id] = @Id)
+      AND (@AccessRequestId IS NULL OR [AccessRequestId] = @AccessRequestId)
+      AND (@WorkerId IS NULL OR [WorkerId] = @WorkerId)
+      AND (@UserId IS NULL OR [UserId] = @UserId)
+      AND (@EventType IS NULL OR [EventType] = @EventType)
+    ORDER BY [CreatedAt] DESC;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[AuditEventsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[AuditEventsInsert]
+    @AccessRequestId INT = NULL,
+    @WorkerId INT = NULL,
+    @UserId INT = NULL,
+    @EventType NVARCHAR(50),
+    @Description NVARCHAR(2000) = NULL,
+    @IpAddress VARCHAR(45) = NULL,
+    @Metadata NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[AuditEvents]
+    (
+        [AccessRequestId],
+        [WorkerId],
+        [UserId],
+        [EventType],
+        [Description],
+        [IpAddress],
+        [Metadata]
+    )
+    VALUES
+    (
+        @AccessRequestId,
+        @WorkerId,
+        @UserId,
+        @EventType,
+        @Description,
+        @IpAddress,
+        @Metadata
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[CheckToken]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[CheckToken]
+	@Token nvarchar(50)
+AS
+BEGIN
+	SELECT ISNULL(AccountId, 0) FROM Token WHERE Token = @Token AND ValidTo > GETDATE()
+END
+GO
+/****** Object:  StoredProcedure [dbo].[CreateUser]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[CreateUser]
+	@Email nvarchar(255),
+	@FirstName nvarchar(100),
+	@LastName nvarchar(100),
+	@PhoneNumber nvarchar,
+	@Role nvarchar(50)='Manager',
+	@IsActive bit = 1,
+	@Password nvarchar(50),
+	@salt nvarchar(50),
+	@isdeleted bit = 0
+
+AS
+BEGIN
+	insert into users
+	(
+	FirstName,
+	LastName,
+	Email,
+	PhoneNumber,
+	[Role],
+	IsActive,
+	CreatedAt,
+	LastLoginAt,
+	[Password],
+	salt,
+	isDeleted
+	)
+	values
+	(
+	@FirstName,
+	@LastName,
+	@Email,
+	@PhoneNumber,
+	@Role,
+	@IsActive,
+	GETDATE(),
+	NULL,
+	@Password,
+	@salt,
+	@isdeleted
+	)
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentManagerMappingDelete]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentManagerMappingDelete]
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM [dbo].[DepartmentManagerMapping] WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentManagerMappingGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentManagerMappingGet]
+    @Id INT = NULL,
+    @DepartmentId INT = NULL,
+    @UserId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[DepartmentId],
+        d.[Name] AS [DepartmentName],
+        d.[SiteId],
+        m.[UserId],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[Role],
+        m.[IsPrimary],
+        m.[AssignedAt]
+    FROM [dbo].[DepartmentManagerMapping] m
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = m.[DepartmentId]
+    INNER JOIN [dbo].[Users] u ON u.[Id] = m.[UserId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@DepartmentId IS NULL OR m.[DepartmentId] = @DepartmentId)
+      AND (@UserId IS NULL OR m.[UserId] = @UserId)
+    ORDER BY d.[Name], u.[LastName], u.[FirstName];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentManagerMappingInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentManagerMappingInsert]
+    @DepartmentId INT,
+    @UserId INT,
+    @IsPrimary BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[DepartmentManagerMapping] ([DepartmentId], [UserId], [IsPrimary])
+    VALUES (@DepartmentId, @UserId, @IsPrimary);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentManagerMappingUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentManagerMappingUpdate]
+    @Id INT,
+    @DepartmentId INT,
+    @UserId INT,
+    @IsPrimary BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[DepartmentManagerMapping]
+    SET [DepartmentId] = @DepartmentId, [UserId] = @UserId, [IsPrimary] = @IsPrimary
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentRoomMappingDelete]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentRoomMappingDelete]
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM [dbo].[DepartmentRoomMapping] WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentRoomMappingGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentRoomMappingGet]
+    @Id INT = NULL,
+    @DepartmentId INT = NULL,
+    @RoomId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[DepartmentId],
+        d.[Name] AS [DepartmentName],
+        d.[SiteId],
+        m.[RoomId],
+        r.[RoomNumber],
+        r.[Name] AS [RoomName]
+    FROM [dbo].[DepartmentRoomMapping] m
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = m.[DepartmentId]
+    INNER JOIN [dbo].[Rooms] r ON r.[Id] = m.[RoomId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@DepartmentId IS NULL OR m.[DepartmentId] = @DepartmentId)
+      AND (@RoomId IS NULL OR m.[RoomId] = @RoomId)
+    ORDER BY d.[Name], r.[RoomNumber];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentRoomMappingInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+    CREATE   PROCEDURE [dbo].[DepartmentRoomMappingInsert]
+        @DepartmentId INT,
+        @RoomId INT
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        IF NOT EXISTS (
+            SELECT 1
+            FROM [dbo].[DepartmentRoomMapping]
+            WHERE [DepartmentId] = @DepartmentId AND [RoomId] = @RoomId
+        )
+        BEGIN
+            INSERT INTO [dbo].[DepartmentRoomMapping] ([DepartmentId], [RoomId])
+            VALUES (@DepartmentId, @RoomId);
+        END
+        SELECT CAST(ISNULL((
+            SELECT [Id] FROM [dbo].[DepartmentRoomMapping]
+            WHERE [DepartmentId] = @DepartmentId AND [RoomId] = @RoomId
+        ), 0) AS INT) AS [Id];
+    END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentsForRoomGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentsForRoomGet]
+    @RoomId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT DISTINCT
+        d.[Id],
+        d.[SiteId],
+        s.[Name] AS [SiteName],
+        d.[Name],
+        d.[Description],
+        d.[IsActive],
+        d.[CreatedAt]
+    FROM [dbo].[DepartmentRoomMapping] drm
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = drm.[DepartmentId] AND d.[IsActive] = 1
+    INNER JOIN [dbo].[Rooms] r ON r.[Id] = drm.[RoomId]
+    INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
+    INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    WHERE drm.[RoomId] = @RoomId
+    ORDER BY d.[Name];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[DepartmentsGet]
+    @Id INT = NULL,
+    @SiteId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        d.[Id],
+        d.[SiteId],
+        s.[Name] AS [SiteName],
+        d.[Name],
+        d.[Description],
+        d.[IsActive],
+        d.[CreatedAt]
+    FROM [dbo].[Departments] d
+    INNER JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    WHERE (@Id IS NULL OR d.[Id] = @Id)
+      AND (@SiteId IS NULL OR d.[SiteId] = @SiteId)
+    ORDER BY s.[Name], d.[Name];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentsInsert]
+    @SiteId INT,
+    @Name NVARCHAR(200),
+    @Description NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[Departments] ([SiteId], [Name], [Description])
+    VALUES (@SiteId, @Name, @Description);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[DepartmentsUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[DepartmentsUpdate]
+    @Id INT,
+    @SiteId INT,
+    @Name NVARCHAR(200),
+    @Description NVARCHAR(500) = NULL,
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[Departments]
+    SET [SiteId] = @SiteId, [Name] = @Name, [Description] = @Description, [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[ExtendAccessToken]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[ExtendAccessToken]
+	@Token nvarchar(50)
+AS
+BEGIN
+	UPDATE Token SET ValidTo = DATEADD(mi, 20, GETDATE()) WHERE Token = @Token
+END
+GO
+/****** Object:  StoredProcedure [dbo].[GetUserByEmail]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[GetUserByEmail]
+	@Email nvarchar(255)
+AS
+BEGIN
+	SELECT TOP 1 * FROM Users WHERE LOWER(Email) = LOWER(@Email)
+END
+GO
+/****** Object:  StoredProcedure [dbo].[LogError]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[LogError]
+	@SourceLocation nvarchar(512),
+	@ErrorMessage nvarchar(4000),
+	@AccountId bigint
+AS
+BEGIN
+	INSERT INTO ErrorLog VALUES (@SourceLocation, @ErrorMessage, @AccountId, GETDATE())
+END
+GO
+/****** Object:  StoredProcedure [dbo].[ManagerCanApprove]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[ManagerCanApprove]
+    @ApproverUserId INT,
+    @RoomId INT = NULL,
+    @AccessRequestId INT = NULL,
+    @DepartmentId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @ResolvedRoomId INT = @RoomId;
+    IF @ResolvedRoomId IS NULL AND @AccessRequestId IS NOT NULL
+        SELECT @ResolvedRoomId = [RoomId] FROM [dbo].[AccessRequests] WHERE [Id] = @AccessRequestId;
+
+    SELECT CAST(CASE WHEN EXISTS (
+        SELECT 1
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        WHERE dmm.[UserId] = @ApproverUserId
+          AND @DepartmentId IS NOT NULL
+          AND @DepartmentId > 0
+          AND dmm.[DepartmentId] = @DepartmentId
+    ) OR EXISTS (
+        SELECT 1
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
+        WHERE dmm.[UserId] = @ApproverUserId
+          AND drm.[RoomId] = @ResolvedRoomId
+    ) OR EXISTS (
+        SELECT 1
+        FROM [dbo].[WorkAreaManagers] wam
+        INNER JOIN [dbo].[Rooms] r ON r.[WorkAreaId] = wam.[WorkAreaId]
+        WHERE wam.[UserId] = @ApproverUserId
+          AND r.[Id] = @ResolvedRoomId
+    ) THEN 1 ELSE 0 END AS INT) AS [Allowed];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[ManagersForRoomGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[ManagersForRoomGet]
+    @RoomId INT,
+    @DepartmentId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @DepartmentId IS NOT NULL AND @DepartmentId > 0
+    BEGIN
+        SELECT DISTINCT
+            u.[Id],
+            u.[Id] AS [UserId],
+            u.[FirstName],
+            u.[LastName],
+            u.[Email],
+            u.[PhoneNumber],
+            u.[Role],
+            u.[IsActive],
+            d.[Id] AS [DepartmentId],
+            d.[Name] AS [DepartmentName],
+            d.[SiteId],
+            s.[Name] AS [SiteName]
+        FROM [dbo].[DepartmentManagerMapping] dmm
+        INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+        INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId]
+        LEFT JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+        WHERE dmm.[DepartmentId] = @DepartmentId
+        ORDER BY u.[LastName], u.[FirstName];
+        RETURN;
+    END
+
+    SELECT DISTINCT
+        u.[Id],
+        u.[Id] AS [UserId],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[PhoneNumber],
+        u.[Role],
+        u.[IsActive],
+        d.[Id] AS [DepartmentId],
+        d.[Name] AS [DepartmentName],
+        d.[SiteId],
+        s.[Name] AS [SiteName]
+    FROM [dbo].[DepartmentManagerMapping] dmm
+    INNER JOIN [dbo].[Departments] d ON d.[Id] = dmm.[DepartmentId] AND d.[IsActive] = 1
+    INNER JOIN [dbo].[Users] u ON u.[Id] = dmm.[UserId]
+    INNER JOIN [dbo].[DepartmentRoomMapping] drm ON drm.[DepartmentId] = d.[Id]
+    LEFT JOIN [dbo].[Sites] s ON s.[Id] = d.[SiteId]
+    WHERE drm.[RoomId] = @RoomId
+    UNION
+    SELECT DISTINCT
+        u.[Id],
+        u.[Id] AS [UserId],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[PhoneNumber],
+        u.[Role],
+        u.[IsActive],
+        CAST(NULL AS INT) AS [DepartmentId],
+        CAST(N'Tower' AS NVARCHAR(200)) AS [DepartmentName],
+        wa.[SiteId],
+        s.[Name] AS [SiteName]
+    FROM [dbo].[WorkAreaManagers] wam
+    INNER JOIN [dbo].[Rooms] r ON r.[WorkAreaId] = wam.[WorkAreaId]
+    INNER JOIN [dbo].[WorkAreas] wa ON wa.[Id] = r.[WorkAreaId]
+    INNER JOIN [dbo].[Users] u ON u.[Id] = wam.[UserId] AND u.[IsActive] = 1
+    LEFT JOIN [dbo].[Sites] s ON s.[Id] = wa.[SiteId]
+    WHERE r.[Id] = @RoomId
+    ORDER BY [LastName], [FirstName];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[NotificationsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[NotificationsGet]
+    @Id INT = NULL,
+    @UserId INT = NULL,
+    @WorkerId INT = NULL,
+    @AccessRequestId INT = NULL,
+    @Status NVARCHAR(30) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        [Id],
+        [UserId],
+        [WorkerId],
+        [AccessRequestId],
+        [Type],
+        [Channel],
+        [Message],
+        [Status],
+        [SentAt],
+        [ReadAt],
+        [CreatedAt]
+    FROM [dbo].[Notifications]
+    WHERE (@Id IS NULL OR [Id] = @Id)
+      AND (@UserId IS NULL OR [UserId] = @UserId)
+      AND (@WorkerId IS NULL OR [WorkerId] = @WorkerId)
+      AND (@AccessRequestId IS NULL OR [AccessRequestId] = @AccessRequestId)
+      AND (@Status IS NULL OR [Status] = @Status)
+    ORDER BY [CreatedAt] DESC;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[NotificationsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[NotificationsInsert]
+    @UserId INT = NULL,
+    @WorkerId INT = NULL,
+    @AccessRequestId INT = NULL,
+    @Type NVARCHAR(50),
+    @Channel NVARCHAR(30),
+    @Message NVARCHAR(2000)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[Notifications]
+    (
+        [UserId],
+        [WorkerId],
+        [AccessRequestId],
+        [Type],
+        [Channel],
+        [Message]
+    )
+    VALUES
+    (
+        @UserId,
+        @WorkerId,
+        @AccessRequestId,
+        @Type,
+        @Channel,
+        @Message
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[NotificationsUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[NotificationsUpdate]
+    @Id INT,
+    @Status NVARCHAR(30),
+    @SentAt DATETIME2(0) = NULL,
+    @ReadAt DATETIME2(0) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[Notifications]
+    SET
+        [Status] = @Status,
+        [SentAt] = @SentAt,
+        [ReadAt] = @ReadAt
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[OTPVerificationsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[OTPVerificationsGet]
+    @Id INT = NULL,
+    @WorkerId INT = NULL,
+    @PhoneNumber NVARCHAR(30)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT top 1
+        [Id],
+        [WorkerId],
+        [PhoneNumber],
+        [CodeHash],
+        [ExpiresAt],
+        [VerifiedAt],
+        [AttemptCount],
+        [CreatedAt]
+    FROM [dbo].[OTPVerifications]
+    WHERE phonenumber = @PhoneNumber
+    ORDER BY [CreatedAt] DESC;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[OTPVerificationsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[OTPVerificationsInsert]
+    @PhoneNumber NVARCHAR(30),
+    @CodeHash INT,
+    @ExpiresAt DATETIME2(0)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[OTPVerifications]
+    (
+        [PhoneNumber],
+        [CodeHash],
+        [ExpiresAt],
+        [CreatedAt]
+    )
+    VALUES
+    (
+        @PhoneNumber,
+        @CodeHash,
+        DATEADD(mi, 45, GETDATE()),
+        GETDATE()
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[OTPVerificationsUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[OTPVerificationsUpdate]
+    @Id INT,
+    @VerifiedAt DATETIME2(0) = NULL,
+    @AttemptCount TINYINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[OTPVerifications]
+    SET
+        [VerifiedAt] = @VerifiedAt,
+        [AttemptCount] = @AttemptCount
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[OTPVerify]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[OTPVerify]
+    @Code int
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @PHONENUMBER nvarchar(20)= NULL
+    IF EXISTS (
+     select top 1 1 from OTPVerifications where CodeHash = @Code and VerifiedAt is null and GETDATE()<ExpiresAt
+    )
+    BEGIN
+    set @PHONENUMBER = (select top 1 PhoneNumber from OTPVerifications where CodeHash = @Code and VerifiedAt is null and GETDATE()<ExpiresAt)
+    update OTPVerifications set VerifiedAt = GETDATE() where CodeHash = @Code and VerifiedAt is null and GETDATE()<ExpiresAt
+    select 1 [value], @PHONENUMBER PhoneNumber
+    END
+    ELSE
+    BEGIN
+    select 0 [value]
+    END
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[RoomManagersGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[RoomManagersGet]
+    @Id INT = NULL,
+    @RoomId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[RoomId],
+        m.[UserId],
+        m.[UserId] AS [ManagerUserId],
+        m.[IsPrimary],
+        m.[AssignedAt],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[Role]
+    FROM [dbo].[RoomManagers] m
+    INNER JOIN [dbo].[Users] u ON u.[Id] = m.[UserId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@RoomId IS NULL OR @RoomId = 0 OR m.[RoomId] = @RoomId)
+    ORDER BY m.[IsPrimary] DESC, u.[LastName], u.[FirstName];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[RoomManagersInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[RoomManagersInsert]
+    @RoomId INT,
+    @UserId INT,
+    @IsPrimary BIT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[RoomManagers] ([RoomId], [UserId], [IsPrimary])
+    VALUES (@RoomId, @UserId, @IsPrimary);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[RoomManagersUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[RoomManagersUpdate]
+    @Id INT,
+    @RoomId INT,
+    @UserId INT,
+    @IsPrimary BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[RoomManagers]
+    SET [RoomId] = @RoomId, [UserId] = @UserId, [IsPrimary] = @IsPrimary
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[RoomsGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[RoomsGet]
+    @Id INT = NULL,
+    @WorkAreaId INT = NULL,
+    @SiteId INT = NULL,
+    @QrCodeIdentifier UNIQUEIDENTIFIER = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        r.[Id],
+        r.[WorkAreaId],
+        wa.[Name] AS [WorkAreaName],
+        r.[RoomNumber],
+        r.[Name] as [RoomName],
+        s.Name as [SiteName],
+        r.[QrCodeIdentifier],
+        r.[Description],
+        r.[IsActive],
+        r.[CreatedAt]
+    FROM [dbo].[Rooms] r
+    INNER JOIN [dbo].[WorkAreas] wa
+        ON wa.[Id] = r.[WorkAreaId]
+    inner join dbo.Sites s 
+    on s.id = wa.SiteId
+    WHERE (@Id IS NULL OR r.[Id] = @Id)
+      AND (@WorkAreaId IS NULL OR @WorkAreaId = 0 OR r.[WorkAreaId] = @WorkAreaId)
+      AND (@SiteId IS NULL OR @SiteId = 0 OR wa.[SiteId] = @SiteId)
+      AND (@QrCodeIdentifier IS NULL OR r.[QrCodeIdentifier] = @QrCodeIdentifier)
+    ORDER BY r.[RoomNumber];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[RoomsGetByAccessRequestId]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[RoomsGetByAccessRequestId]
+    @AccessRequestId int
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        r.Id,
+        r.WorkAreaId,
+        r.RoomNumber,
+        r.Name,
+        w.FirstName,
+        w.LastName,
+        w.PhoneNumber,
+        r.QrCodeIdentifier,
+        r.Description,
+        r.IsActive,
+        r.CreatedAt
+
+    FROM dbo.Rooms r
+    INNER JOIN AccessRequests ar
+    on r.id = ar.RoomId
+    inner join Workers w
+    on w.id = ar.WorkerId
+
+    WHERE ar.id = @AccessRequestId
+      AND r.IsActive = 1
+END
+GO
+/****** Object:  StoredProcedure [dbo].[RoomsGetByQrCode]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[RoomsGetByQrCode]
+    @QrCodeIdentifier VARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        r.Id,
+        r.WorkAreaId,
+        r.RoomNumber,
+        r.Name,
+        r.QrCodeIdentifier,
+        r.Description,
+        r.IsActive,
+        r.CreatedAt,
+
+        wa.Name AS WorkAreaName,
+        wa.Description AS WorkAreaDescription,
+
+        s.Id AS SiteId,
+        s.Name AS SiteName,
+        s.Address AS SiteAddress,
+        s.Reference AS SiteReference
+
+    FROM dbo.Rooms r
+    INNER JOIN dbo.WorkAreas wa
+        ON r.WorkAreaId = wa.Id
+    INNER JOIN dbo.Sites s
+        ON wa.SiteId = s.Id
+
+    WHERE r.QrCodeIdentifier = @QrCodeIdentifier
+      AND r.IsActive = 1
+      AND wa.IsActive = 1
+      AND s.IsActive = 1;
+END
+GO
+/****** Object:  StoredProcedure [dbo].[RoomsInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[RoomsInsert]
+    @WorkAreaId INT,
+    @RoomNumber NVARCHAR(100),
+    @Name NVARCHAR(200) = NULL,
+    @Description NVARCHAR(500) = NULL,
+    @LocationKind NVARCHAR(30) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF @LocationKind IS NULL OR LTRIM(RTRIM(@LocationKind)) = ''
+        SET @LocationKind = N'Apartment';
+
+    INSERT INTO [dbo].[Rooms]
+    (
+        [WorkAreaId],
+        [RoomNumber],
+        [Name],
+        [Description],
+        [LocationKind],
+        [QrCodeIdentifier]
+    )
+    VALUES
+    (
+        @WorkAreaId,
+        @RoomNumber,
+        @Name,
+        @Description,
+        @LocationKind,
+        NEWID()
+    );
+
+    DECLARE @Id INT = CAST(SCOPE_IDENTITY() AS INT);
+
+    SELECT
+        [Id],
+        [QrCodeIdentifier]
+    FROM [dbo].[Rooms]
+    WHERE [Id] = @Id;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[RoomsUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[RoomsUpdate]
+    @Id INT,
+    @WorkAreaId INT,
+    @RoomNumber NVARCHAR(100),
+    @Name NVARCHAR(200) = NULL,
+    @Description NVARCHAR(500) = NULL,
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[Rooms]
+    SET
+        [WorkAreaId] = @WorkAreaId,
+        [RoomNumber] = @RoomNumber,
+        [Name] = @Name,
+        [Description] = @Description,
+        [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[SitesGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[SitesGet]
+    @Id INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        [Id],
+        [Name],
+        [Address],
+        [Reference],
+        [IsActive],
+        [CreatedAt]
+    FROM [dbo].[Sites]
+    WHERE @Id IS NULL OR [Id] = @Id
+    ORDER BY [Name];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[SitesGetByQrCode]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[SitesGetByQrCode]
+    @QrCodeIdentifier NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        0 AS [Id],
+        0 AS [WorkAreaId],
+        CAST('' AS NVARCHAR(100)) AS [RoomNumber],
+        s.[Name],
+        s.[QrCodeIdentifier],
+        s.[Address] AS [Description],
+        s.[IsActive],
+        s.[CreatedAt],
+        CAST('' AS NVARCHAR(200)) AS [WorkAreaName],
+        CAST('' AS NVARCHAR(500)) AS [WorkAreaDescription],
+        s.[Id] AS [SiteId],
+        s.[Name] AS [SiteName],
+        s.[Address] AS [SiteAddress],
+        s.[Reference] AS [SiteReference],
+        CAST(N'site' AS NVARCHAR(20)) AS [ScanKind]
+    FROM [dbo].[Sites] s
+    WHERE s.[IsActive] = 1
+      AND s.[QrCodeIdentifier] IS NOT NULL
+      AND LOWER(s.[QrCodeIdentifier]) = LOWER(@QrCodeIdentifier);
+END
+GO
+/****** Object:  StoredProcedure [dbo].[SitesInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[SitesInsert]
+    @Name NVARCHAR(200),
+    @Address NVARCHAR(500) = NULL,
+    @Reference NVARCHAR(100) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[Sites]
+    (
+        [Name],
+        [Address],
+        [Reference],
+        [CreatedAt]
+    )
+    VALUES
+    (
+        @Name,
+        @Address,
+        @Reference,
+        GETDATE()
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[SitesUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[SitesUpdate]
+    @Id INT,
+    @Name NVARCHAR(200),
+    @Address NVARCHAR(500) = NULL,
+    @Reference NVARCHAR(100) = NULL,
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[Sites]
+    SET
+        [Name] = @Name,
+        [Address] = @Address,
+        [Reference] = @Reference,
+        [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[UsersGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[UsersGet]
+    @Id INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        [Id],
+        [FirstName],
+        [LastName],
+        [Email],
+        [PhoneNumber],
+        [Role],
+        [IsActive],
+        [CreatedAt],
+        [LastLoginAt]
+    FROM [dbo].[Users]
+    WHERE @Id IS NULL OR [Id] = @Id
+    ORDER BY [LastName], [FirstName];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[UsersInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[UsersInsert]
+    @FirstName NVARCHAR(100),
+    @LastName NVARCHAR(100),
+    @Email NVARCHAR(255),
+    @PhoneNumber NVARCHAR(30) = NULL,
+    @Role NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[Users]
+    (
+        [FirstName],
+        [LastName],
+        [Email],
+        [PhoneNumber],
+        [Role]
+    )
+    VALUES
+    (
+        @FirstName,
+        @LastName,
+        @Email,
+        @PhoneNumber,
+        @Role
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[UsersSetPassword]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[UsersSetPassword]
+    @Id INT,
+    @Password NVARCHAR(200),
+    @Salt NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE [dbo].[Users]
+    SET [Password] = @Password, [Salt] = @Salt
+    WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UsersUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[UsersUpdate]
+    @Id INT,
+    @FirstName NVARCHAR(100),
+    @LastName NVARCHAR(100),
+    @Email NVARCHAR(255),
+    @PhoneNumber NVARCHAR(30) = NULL,
+    @Role NVARCHAR(50),
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[Users]
+    SET
+        [FirstName] = @FirstName,
+        [LastName] = @LastName,
+        [Email] = @Email,
+        [PhoneNumber] = @PhoneNumber,
+        [Role] = @Role,
+        [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkAreaManagersGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkAreaManagersGet]
+    @Id INT = NULL,
+    @WorkAreaId INT = NULL,
+    @UserId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        wam.[Id],
+        wam.[WorkAreaId],
+        wa.[Name] AS [WorkAreaName],
+        wam.[UserId],
+        u.[FirstName],
+        u.[LastName],
+        u.[Email],
+        u.[PhoneNumber],
+        wam.[IsPrimary],
+        wam.[AssignedAt]
+    FROM [dbo].[WorkAreaManagers] wam
+    INNER JOIN [dbo].[WorkAreas] wa
+        ON wa.[Id] = wam.[WorkAreaId]
+    INNER JOIN [dbo].[Users] u
+        ON u.[Id] = wam.[UserId]
+    WHERE (@Id IS NULL OR wam.[Id] = @Id)
+      AND (@WorkAreaId IS NULL OR wam.[WorkAreaId] = @WorkAreaId)
+      AND (@UserId IS NULL OR wam.[UserId] = @UserId)
+    ORDER BY wa.[Name], u.[LastName], u.[FirstName];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkAreaManagersInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkAreaManagersInsert]
+    @WorkAreaId INT,
+    @UserId INT,
+    @IsPrimary BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[WorkAreaManagers]
+    (
+        [WorkAreaId],
+        [UserId],
+        [IsPrimary]
+    )
+    VALUES
+    (
+        @WorkAreaId,
+        @UserId,
+        @IsPrimary
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkAreaManagersUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkAreaManagersUpdate]
+    @Id INT,
+    @WorkAreaId INT,
+    @UserId INT,
+    @IsPrimary BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[WorkAreaManagers]
+    SET
+        [WorkAreaId] = @WorkAreaId,
+        [UserId] = @UserId,
+        [IsPrimary] = @IsPrimary
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkAreasGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkAreasGet]
+    @Id INT = NULL,
+    @SiteId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        wa.[Id],
+        wa.[SiteId],
+        s.[Name] AS [SiteName],
+        wa.[Name],
+        wa.[Description],
+        wa.[IsActive],
+        wa.[CreatedAt]
+    FROM [dbo].[WorkAreas] wa
+    INNER JOIN [dbo].[Sites] s
+        ON s.[Id] = wa.[SiteId]
+    WHERE (@Id IS NULL OR wa.[Id] = @Id)
+      AND (@SiteId IS NULL OR @SiteId = 0 OR wa.[SiteId] = @SiteId)
+    ORDER BY s.[Name], wa.[Name];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkAreasInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkAreasInsert]
+    @SiteId INT,
+    @Name NVARCHAR(200),
+    @Description NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[WorkAreas]
+    (
+        [SiteId],
+        [Name],
+        [Description]
+    )
+    VALUES
+    (
+        @SiteId,
+        @Name,
+        @Description
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkAreasUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkAreasUpdate]
+    @Id INT,
+    @SiteId INT,
+    @Name NVARCHAR(200),
+    @Description NVARCHAR(500) = NULL,
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[WorkAreas]
+    SET
+        [SiteId] = @SiteId,
+        [Name] = @Name,
+        [Description] = @Description,
+        [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkersGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkersGet]
+    @Id INT = NULL,
+    @PhoneNumber NVARCHAR(30) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        [Id],
+        [FirstName],
+        [LastName],
+        [PhoneNumber],
+        [CompanyName],
+        [IsActive],
+        [CreatedAt],
+        [LastSeenAt]
+    FROM [dbo].[Workers]
+    WHERE (@Id IS NULL OR [Id] = @Id)
+      AND (@PhoneNumber IS NULL OR [PhoneNumber] = @PhoneNumber)
+    ORDER BY [LastName], [FirstName];
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkersInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkersInsert]
+    @FirstName NVARCHAR(100),
+    @LastName NVARCHAR(100),
+    @PhoneNumber NVARCHAR(30),
+    @CompanyName NVARCHAR(200) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF EXISTS (
+    select 1 from Workers where PhoneNumber = @PhoneNumber
+    )
+    begin
+        select id from Workers where PhoneNumber = @PhoneNumber
+    end
+    else  
+    begin
+    INSERT INTO [dbo].[Workers]
+    (
+        [FirstName],
+        [LastName],
+        [PhoneNumber],
+        [CompanyName]
+    )
+    VALUES
+    (
+        @FirstName,
+        @LastName,
+        @PhoneNumber,
+        @CompanyName
+    );
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+    end
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[WorkerSiteMappingDelete]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[WorkerSiteMappingDelete]
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM [dbo].[WorkerSiteMapping] WHERE [Id] = @Id;
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[WorkerSiteMappingGet]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[WorkerSiteMappingGet]
+    @Id INT = NULL,
+    @WorkerId INT = NULL,
+    @SiteId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        m.[Id],
+        m.[WorkerId],
+        w.[FirstName] AS [WorkerFirstName],
+        w.[LastName] AS [WorkerLastName],
+        m.[SiteId],
+        s.[Name] AS [SiteName]
+    FROM [dbo].[WorkerSiteMapping] m
+    INNER JOIN [dbo].[Workers] w ON w.[Id] = m.[WorkerId]
+    INNER JOIN [dbo].[Sites] s ON s.[Id] = m.[SiteId]
+    WHERE (@Id IS NULL OR m.[Id] = @Id)
+      AND (@WorkerId IS NULL OR m.[WorkerId] = @WorkerId)
+      AND (@SiteId IS NULL OR m.[SiteId] = @SiteId)
+    ORDER BY w.[LastName], s.[Name];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[WorkerSiteMappingInsert]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[WorkerSiteMappingInsert]
+    @WorkerId INT,
+    @SiteId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO [dbo].[WorkerSiteMapping] ([WorkerId], [SiteId])
+    VALUES (@WorkerId, @SiteId);
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS [Id];
+END
+GO
+/****** Object:  StoredProcedure [dbo].[WorkersUpdate]    Script Date: 26/09/2026 00:35:29 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[WorkersUpdate]
+    @Id INT,
+    @FirstName NVARCHAR(100),
+    @LastName NVARCHAR(100),
+    @PhoneNumber NVARCHAR(30),
+    @CompanyName NVARCHAR(200) = NULL,
+    @IsActive BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE [dbo].[Workers]
+    SET
+        [FirstName] = @FirstName,
+        [LastName] = @LastName,
+        [PhoneNumber] = @PhoneNumber,
+        [CompanyName] = @CompanyName,
+        [IsActive] = @IsActive
+    WHERE [Id] = @Id;
+
+    SELECT @@ROWCOUNT AS [RowsAffected];
+END;
+GO

@@ -140,11 +140,6 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-
-        // ============================================================
-        // WORK AREAS
-        // ============================================================
-
         public DataTable GetWorkAreas(int siteId = 0)
         {
             List<SqlParameter> sqlParams = new();
@@ -691,11 +686,6 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-
-        // ============================================================
-        // ACCESS WINDOWS
-        // ============================================================
-
         public DataTable GetAccessWindows()
         {
             List<SqlParameter> sqlParams = new();
@@ -781,10 +771,6 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-
-        // ============================================================
-        // ACCESS REQUESTS
-        // ============================================================
 
         public DataTable GetAccessRequests(
             int id,
@@ -1376,10 +1362,6 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
-
-        // ============================================================
-        // NOTIFICATIONS
-        // ============================================================
 
         public DataTable GetNotifications()
         {

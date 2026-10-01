@@ -2,10 +2,6 @@
 {
     public class Model
     {
-        // ============================================================
-        // SITE
-        // ============================================================
-
         public class Site
         {
             public int Id;
@@ -147,11 +143,6 @@
             public DateTime? LastSeenAt;
         }
 
-
-        // ============================================================
-        // ACCESS WINDOW
-        // ============================================================
-
         public class AccessWindow
         {
             public int Id;
@@ -161,11 +152,6 @@
             public TimeSpan EndTime;
             public bool IsActive;
         }
-
-
-        // ============================================================
-        // ACCESS REQUEST
-        // ============================================================
 
         public class AccessRequest
         {
@@ -193,11 +179,6 @@
             public DateTime CreatedAt;
         }
 
-
-        // ============================================================
-        // ACCESS REQUEST APPROVAL
-        // ============================================================
-
         public class AccessRequestApproval
         {
             public int Id;
@@ -207,11 +188,6 @@
             public string Comment;
             public DateTime? ReviewedAt;
         }
-
-
-        // ============================================================
-        // ACCESS PHOTO
-        // ============================================================
 
         public class AccessPhoto
         {
@@ -226,12 +202,6 @@
             public DateTime UploadedAt;
             public string PhotoType;
         }
-
-
-        // ============================================================
-        // OTP VERIFICATION
-        // ============================================================
-
         public class OTPVerification
         {
             public int Id;
@@ -243,11 +213,6 @@
             public int AttemptCount;
             public DateTime CreatedAt;
         }
-
-
-        // ============================================================
-        // NOTIFICATION
-        // ============================================================
 
         public class Notification
         {
@@ -263,11 +228,6 @@
             public DateTime? ReadAt;
             public DateTime CreatedAt;
         }
-
-
-        // ============================================================
-        // AUDIT EVENT
-        // ============================================================
 
         public class AuditEvent
         {

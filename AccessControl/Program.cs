@@ -37,11 +37,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Access photos are written into the web root and served back from it, so it
-// has to exist: a fresh clone has no wwwroot, which leaves WebRootPath null
-// and UseStaticFiles with nothing to serve. Resolved explicitly here so the
-// upload path in AccessProcessor.InsertAccessPhoto and the URL it hands back
-// always point at the same folder.
+// Access photos are written into the web root and served back from it
+
 var webRoot = string.IsNullOrWhiteSpace(app.Environment.WebRootPath)
     ? Path.Combine(app.Environment.ContentRootPath, "wwwroot")
     : app.Environment.WebRootPath;

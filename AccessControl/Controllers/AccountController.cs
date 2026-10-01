@@ -242,10 +242,6 @@ namespace AccessControl.Controllers
         }
 
 
-        // ============================================================
-        // USERS
-        // ============================================================
-
         [HttpPost("getusers")]
         public string GetUsers(TokenOnlyRequest req)
         {
@@ -323,10 +319,6 @@ namespace AccessControl.Controllers
                 Newtonsoft.Json.Formatting.Indented);
         }
 
-
-        // ============================================================
-        // WORK AREA MANAGERS
-        // ============================================================
 
         [HttpPost("getworkareamanagers")]
         public string GetWorkAreaManagers(TokenOnlyRequest req)
@@ -408,11 +400,6 @@ namespace AccessControl.Controllers
                 Newtonsoft.Json.Formatting.Indented);
         }
 
-
-        // ============================================================
-        // WORKERS
-        // ============================================================
-
         [HttpPost("getworkers")]
         public string GetWorkers(TokenOnlyRequest req)
         {
@@ -479,11 +466,6 @@ namespace AccessControl.Controllers
                 ret,
                 Newtonsoft.Json.Formatting.Indented);
         }
-
-
-        // ============================================================
-        // ROOMS
-        // ============================================================
 
         [HttpPost("getrooms")]
         public string GetRooms(GetRoomsRequest req)
@@ -572,11 +554,6 @@ namespace AccessControl.Controllers
                 Newtonsoft.Json.Formatting.Indented);
         }
 
-
-        // ============================================================
-        // ACCESS WINDOWS
-        // ============================================================
-
         [HttpPost("getaccesswindows")]
         public string GetAccessWindows(TokenOnlyRequest req)
         {
@@ -659,11 +636,6 @@ namespace AccessControl.Controllers
                 ret,
                 Newtonsoft.Json.Formatting.Indented);
         }
-
-
-        // ============================================================
-        // ACCESS REQUESTS
-        // ============================================================
 
         [HttpPost("getaccessrequests")]
         public string GetAccessRequests(GetAccessRequestsRequest req)
@@ -918,11 +890,6 @@ namespace AccessControl.Controllers
                 accountId = 0;
             }
 
-            // A worker has no token of their own: verifying the OTP does not
-            // mint one. Authorise them by the visit instead, the same way
-            // UpdateAccessRequest already does for clock in and clock out.
-            // Without this the sign-out photo can never be uploaded, so a
-            // visit can never be closed.
             if (accountId < 1 &&
                 !_proc.WorkerOwnsOpenRequest(
                     req.AccessRequestId,
@@ -989,11 +956,6 @@ namespace AccessControl.Controllers
                 ret,
                 Newtonsoft.Json.Formatting.Indented);
         }
-
-
-        // ============================================================
-        // OTP VERIFICATIONS
-        // ============================================================
 
         [HttpPost("getotpverifications")]
         public string GetOTPVerifications(
@@ -1077,10 +1039,6 @@ namespace AccessControl.Controllers
                 Newtonsoft.Json.Formatting.Indented);
         }
 
-
-        // ============================================================
-        // NOTIFICATIONS
-        // ============================================================
 
         [HttpPost("getnotifications")]
         public string GetNotifications(
