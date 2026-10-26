@@ -1,4 +1,4 @@
-﻿using AccessControl.Database;
+using AccessControl.Database;
 using System.Security.Cryptography;
 using static System.Text.Encoding;
 namespace AccessControl.Security
@@ -6,11 +6,15 @@ namespace AccessControl.Security
     public class Encryptor
     {
 
-        private string _key = "***REMOVED_ENCRYPTION_KEY***";
+        private readonly string _key;
         private DatabaseLogic _db;
 
         public Encryptor(IConfiguration config)
         {
+            // Never hard-code this. Set it with: dotnet user-secrets set "Security:EncryptionKey" "<value>"
+            // (or the Security__EncryptionKey environment variable on a server).
+            _key = config["Security:EncryptionKey"]
+                ?? throw new InvalidOperationException("Security:EncryptionKey is not configured. See README.md.");
             _db = new(config.GetSection("ConnectionStrings:AccessControlDB").Get<string>()!, false);
         }
 

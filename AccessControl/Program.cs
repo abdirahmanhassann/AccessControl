@@ -2,6 +2,9 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Private settings for this computer only (connection strings, keys). Git ignores this file.
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 foreach (var key in new[]
 {
     "TWILIO_ACCOUNT_SID",

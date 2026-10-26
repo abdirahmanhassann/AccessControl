@@ -228,7 +228,9 @@ namespace AccessControl.Database
             string lastName,
             string email,
             string? phoneNumber,
-            string role)
+            string role,
+            string password,
+            string salt)
         {
             List<SqlParameter> sqlParams = new();
 
@@ -260,6 +262,18 @@ namespace AccessControl.Database
                 _conn.GenerateInputString(
                     "@Role",
                     role,
+                    50));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@Password",
+                    password,
+                    50));
+
+            sqlParams.Add(
+                _conn.GenerateInputString(
+                    "@Salt",
+                    salt,
                     50));
 
             DataRow created = _conn.ExecuteStoredProcedureAsDataRow(

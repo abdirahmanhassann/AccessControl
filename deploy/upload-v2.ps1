@@ -1,4 +1,4 @@
-# Packs AccessControl + AccessControlFE and uploads them to your AWS storage (link valid until ~16:17).
+# Packs AccessControl + AccessControlFE and uploads them to your AWS storage (link valid until ~21:11 on 1 Oct).
 $ErrorActionPreference = "Stop"
 $out = Join-Path $env:TEMP "accesscontrol-src.tgz"
 Set-Location "C:\Users\abdi1\source\repos"

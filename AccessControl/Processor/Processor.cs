@@ -401,18 +401,17 @@ namespace AccessControl.Processor
         {
             try
             {
-                int createdId = _db.InsertUser(
+                Encryptor enc = new(_config);
+                string salt = enc.GenerateRandomSalt();
+                string plain = string.IsNullOrWhiteSpace(password) ? Guid.NewGuid().ToString() : password;
+                _db.InsertUser(
                     firstName,
                     lastName,
                     email,
                     phoneNumber,
-                    role);
-                if (!string.IsNullOrWhiteSpace(password) && createdId > 0)
-                {
-                    Encryptor enc = new(_config);
-                    string salt = enc.GenerateRandomSalt();
-                    _db.SetUserPassword(createdId, enc.Encrypt(password, salt), salt);
-                }
+                    role,
+                    enc.Encrypt(plain, salt),
+                    salt);
 
                 return CreateSuccessResponseNoData();
             }
@@ -1003,6 +1002,13 @@ namespace AccessControl.Processor
 
                 EnsureDepartmentRoomLink(departmentId, resolvedRoomId);
 
+                // Access windows are blackout periods: no requests while one is active for this work area.
+                string? blackout = GetBlackoutMessage(GetRoomWorkAreaId(resolvedRoomId, towerId), DateTime.Now);
+                if (blackout != null)
+                {
+                    return CreateFailureResponse(blackout);
+                }
+
                 if (!ManagerIsAllowed(approverUserId, resolvedRoomId, departmentId))
                 {
                     return CreateFailureResponse("That manager is not assigned to that location.");
@@ -1335,6 +1341,19 @@ namespace AccessControl.Processor
         {
             try
             {
+                // Workers (no staff token) cannot clock in or out once the approved
+                // time frame has ended; the visit is overdue and a manager must close it.
+                if (userId < 1 && (clockedInAt.HasValue || clockedOutAt.HasValue || completedAt.HasValue))
+                {
+                    DateTime? windowEnd = GetRequestWindowEnd(id);
+                    if (windowEnd.HasValue && DateTime.Now > windowEnd.Value)
+                    {
+                        return CreateFailureResponse(
+                            $"Your approved time frame ended at {windowEnd.Value:HH:mm} on {windowEnd.Value:d MMM}. " +
+                            "This visit is overdue. Please contact your site manager to be signed out.");
+                    }
+                }
+
                 if (clockedInAt.HasValue && !expectedClockOutAt.HasValue)
                 {
                     expectedClockOutAt = ResolveExpectedClockOut(roomId, id);
@@ -2326,18 +2345,32 @@ namespace AccessControl.Processor
             }
         }
 
+        DateTime? GetRequestWindowEnd(int accessRequestId)
+        {
+            if (accessRequestId < 1) return null;
+            DataTable dt = _db.GetAccessRequests(accessRequestId, 0, 0, null, null, 0, 1);
+            if (dt.Rows.Count == 0) return null;
+            DataRow row = dt.Rows[0];
+            foreach (string col in new[] { "WorkTo", "ExpectedClockOutAt" })
+            {
+                if (dt.Columns.Contains(col) && row[col] != DBNull.Value)
+                {
+                    return Convert.ToDateTime(row[col]);
+                }
+            }
+            return null;
+        }
+
         DateTime ResolveExpectedClockOut(int? roomId, int accessRequestId)
         {
-            int workAreaId = 0;
+            DateTime now = DateTime.Now;
+            DateTime expected = now.AddHours(8);
             try
             {
+                int workAreaId = 0;
                 if (roomId.HasValue && roomId.Value > 0)
                 {
-                    DataTable rooms = _db.GetRooms(roomId.Value);
-                    if (rooms.Rows.Count > 0 && rooms.Columns.Contains("WorkAreaId") && rooms.Rows[0]["WorkAreaId"] != DBNull.Value)
-                    {
-                        workAreaId = Convert.ToInt32(rooms.Rows[0]["WorkAreaId"]);
-                    }
+                    workAreaId = GetRoomWorkAreaId(roomId.Value, 0);
                 }
                 if (workAreaId < 1 && accessRequestId > 0)
                 {
@@ -2347,20 +2380,70 @@ namespace AccessControl.Processor
                         workAreaId = Convert.ToInt32(room["WorkAreaId"]);
                     }
                 }
-                int dayOfWeek = (int)DateTime.Now.DayOfWeek;
-                DataTable windows = _db.GetAccessWindows();
-                foreach (DataRow row in windows.Rows)
+                // Workers must be out before the next blackout window starts today.
+                foreach (DataRow row in ActiveWindows(workAreaId, now.DayOfWeek))
                 {
-                    if (workAreaId > 0 && Convert.ToInt32(row["WorkAreaId"]) != workAreaId) continue;
-                    if (Convert.ToInt32(row["DayOfWeek"]) != dayOfWeek) continue;
-                    TimeSpan end = row["EndTime"] is TimeSpan ts ? ts : TimeSpan.Parse(row["EndTime"].ToString()!);
-                    return DateTime.Today.Add(end);
+                    TimeSpan start = ToTimeSpan(row["StartTime"]);
+                    DateTime startAt = now.Date.Add(start);
+                    if (startAt > now && startAt < expected)
+                    {
+                        expected = startAt;
+                    }
                 }
             }
             catch
             {
             }
-            return DateTime.Now.AddHours(8);
+            return expected;
+        }
+
+        int GetRoomWorkAreaId(int roomId, int fallbackWorkAreaId)
+        {
+            DataTable rooms = _db.GetRooms(roomId);
+            if (rooms.Rows.Count > 0 && rooms.Columns.Contains("WorkAreaId") && rooms.Rows[0]["WorkAreaId"] != DBNull.Value)
+            {
+                return Convert.ToInt32(rooms.Rows[0]["WorkAreaId"]);
+            }
+            return fallbackWorkAreaId;
+        }
+
+        List<DataRow> ActiveWindows(int workAreaId, DayOfWeek day)
+        {
+            List<DataRow> result = new();
+            if (workAreaId < 1) return result;
+            DataTable windows = _db.GetAccessWindows();
+            foreach (DataRow row in windows.Rows)
+            {
+                if (Convert.ToInt32(row["WorkAreaId"]) != workAreaId) continue;
+                if (Convert.ToInt32(row["DayOfWeek"]) != (int)day) continue;
+                if (windows.Columns.Contains("IsActive") && row["IsActive"] != DBNull.Value && !Convert.ToBoolean(row["IsActive"])) continue;
+                result.Add(row);
+            }
+            return result;
+        }
+
+        // Returns a message when the work area has an active blackout window covering `when`, otherwise null.
+        string? GetBlackoutMessage(int workAreaId, DateTime when)
+        {
+            TimeSpan now = when.TimeOfDay;
+            foreach (DataRow row in ActiveWindows(workAreaId, when.DayOfWeek))
+            {
+                TimeSpan start = ToTimeSpan(row["StartTime"]);
+                TimeSpan end = ToTimeSpan(row["EndTime"]);
+                bool inside = start <= end
+                    ? now >= start && now < end
+                    : now >= start || now < end; // window that runs past midnight
+                if (inside)
+                {
+                    return $"Access requests are closed for this area on {when.DayOfWeek}s between {start:hh\\:mm} and {end:hh\\:mm}. Please try again after {end:hh\\:mm}.";
+                }
+            }
+            return null;
+        }
+
+        static TimeSpan ToTimeSpan(object value)
+        {
+            return value is TimeSpan ts ? ts : TimeSpan.Parse(value.ToString()!);
         }
     }
 }

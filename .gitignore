@@ -364,3 +364,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Local secrets, user uploads and deploy env files
+*.local.sql
+AccessControl/wwwroot/uploads/
+deploy/.env
+deploy/*.env
