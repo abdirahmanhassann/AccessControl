@@ -1962,5 +1962,53 @@ namespace AccessControl.Database
             }
             return Convert.ToDateTime(dt.Rows[0]["WorkTo"]);
         }
+
+        // ---- Keyman room-leave reviews (Database/Keyman.sql) ----
+
+        /// <summary>
+        /// Creates the review for a signed-out visit. Returns the review row; its
+        /// Created column is 1 only on the call that actually inserted it.
+        /// </summary>
+        public DataRow InsertRoomLeaveReview(int accessRequestId)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputInteger("@AccessRequestId", accessRequestId));
+            return _conn.ExecuteStoredProcedureAsDataRow(
+                "RoomLeaveReviewsInsert",
+                sqlParams.ToArray());
+        }
+
+        public DataTable GetRoomLeaveReviews(int id = 0, int accessRequestId = 0, string? status = null)
+        {
+            List<SqlParameter> sqlParams = new();
+            if (id > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@Id", id));
+            }
+            if (accessRequestId > 0)
+            {
+                sqlParams.Add(_conn.GenerateInputInteger("@AccessRequestId", accessRequestId));
+            }
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                sqlParams.Add(_conn.GenerateInputString("@Status", status, 20));
+            }
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "RoomLeaveReviewsGet",
+                sqlParams.ToArray());
+        }
+
+        /// <returns>True if the review was still pending and is now decided.</returns>
+        public bool UpdateRoomLeaveReview(int id, string status, int reviewedByUserId, string? reason)
+        {
+            List<SqlParameter> sqlParams = new();
+            sqlParams.Add(_conn.GenerateInputInteger("@Id", id));
+            sqlParams.Add(_conn.GenerateInputString("@Status", status, 20));
+            sqlParams.Add(_conn.GenerateInputInteger("@ReviewedByUserId", reviewedByUserId));
+            sqlParams.Add(_conn.GenerateInputString("@Reason", reason, 1000));
+            return _conn.ExecuteStoredProcedureAsScalarInt(
+                "RoomLeaveReviewsUpdate",
+                sqlParams.ToArray()) > 0;
+        }
     }
 }

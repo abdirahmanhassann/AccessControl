@@ -702,7 +702,7 @@ namespace AccessControl.Controllers
 
 
         [HttpPost("updateaccessrequest")]
-        public string UpdateAccessRequest(
+        public async Task<string> UpdateAccessRequest(
             UpdateAccessRequestRequest req)
         {
             int accountId = 0;
@@ -732,7 +732,7 @@ namespace AccessControl.Controllers
                     });
             }
 
-            GenericResponse ret = _proc.UpdateAccessRequest(
+            GenericResponse ret = await _proc.UpdateAccessRequest(
                 (int)accountId,
                 req.Id,
                 req.WorkerId,
@@ -1376,6 +1376,27 @@ namespace AccessControl.Controllers
         public string GetDepartmentsForRoom(ManagersForRoomRequest req)
         {
             return JsonConvert.SerializeObject(_proc.GetDepartmentsForRoom(req.RoomId), Newtonsoft.Json.Formatting.Indented);
+        }
+
+        // Keyman: rooms waiting to be checked after the worker signed out.
+        [HttpPost("getroomleavereviews")]
+        public string GetRoomLeaveReviews(GetRoomLeaveReviewsRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            return JsonConvert.SerializeObject(
+                _proc.GetRoomLeaveReviews(accountId, req.Id, req.AccessRequestId, req.Status),
+                Newtonsoft.Json.Formatting.Indented);
+        }
+
+        // Keyman approves the room leave, or rejects it with a reason.
+        [HttpPost("reviewroomleave")]
+        public async Task<string> ReviewRoomLeave(ReviewRoomLeaveRequest req)
+        {
+            string? err = Guard(req.Token, out int accountId);
+            if (err != null) return err;
+            GenericResponse ret = await _proc.ReviewRoomLeave(accountId, req.Id, req.Status, req.Reason);
+            return JsonConvert.SerializeObject(ret, Newtonsoft.Json.Formatting.Indented);
         }
     }
 }

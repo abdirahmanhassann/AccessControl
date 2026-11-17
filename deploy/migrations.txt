@@ -1,0 +1,4 @@
+# SQL scripts the server runs on the database before each API deploy, in this order.
+# Each one must be safe to run again (CREATE OR ALTER, IF NOT EXISTS ...).
+# Paths are from the root of this repository.
+AccessControl/Database/Keyman.sql

@@ -12,6 +12,7 @@ This repository contains the **ASP.NET Core Web API**. The frontend lives in a s
 - **Blackout access windows.** No requests can be made for a work area while one is active.
 - **SMS notifications and OTP verification** through Twilio.
 - **Access photos.** Images can be uploaded against requests.
+- **Keyman room checks.** When a worker signs out of a room, the Keyman is pinged to check the room. They approve the room leave, or reject it with a reason. Keymen otherwise have the same access as managers.
 - **Audit trail.** Every request, approval and rejection is logged.
 - **Accounts.** Token-based login, password reset by SMS code, and admin endpoints for managing sites, rooms, workers and managers.
 
@@ -39,7 +40,7 @@ deploy/            Docker files and scripts from a personal test deployment
 
 **Prerequisites:** .NET 10 SDK and SQL Server (Express is fine).
 
-1. **Create the database.** Run `Database/DBSCRIPT.txt`, then `Mappings.sql`, `SiteQr.sql` and `UsersInsert.sql`.
+1. **Create the database.** Run `Database/DBSCRIPT.txt`, then `Mappings.sql`, `SiteQr.sql`, `Keyman.sql` and `UsersInsert.sql`. `Keyman.sql` is safe to run again on an existing database.
 2. **Set the connection string.** Either edit `ConnectionStrings:AccessControlDB` in `appsettings.json`, or override it in an `appsettings.Local.json` file next to it. That file is git-ignored.
 3. **Set the secrets with .NET user secrets.** They are never stored in the repository.
 

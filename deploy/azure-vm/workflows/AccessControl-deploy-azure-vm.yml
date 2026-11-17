@@ -1,0 +1,82 @@
+# Builds the API and deploys it to the Azure Windows VM on every push to master.
+# One-time VM setup: see deploy/azure-vm/README.md
+name: Deploy API to Azure VM
+
+on:
+  push:
+    branches: [master]
+    paths-ignore: ['**.md', 'deploy/**']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish (self-contained, Windows x64)
+        run: dotnet publish AccessControl/AccessControl.csproj -c Release -r win-x64 --self-contained true -o out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: out/
+          retention-days: 7
+
+  deploy:
+    needs: build
+    # The GitHub runner installed on the VM (see README). No inbound ports or secrets needed.
+    runs-on: [self-hosted, windows, accesscontrol-vm]
+    steps:
+      - name: Clear previous download
+        shell: powershell
+        run: Remove-Item "$env:GITHUB_WORKSPACE\publish" -Recurse -Force -ErrorAction SilentlyContinue
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: publish
+
+      - name: Swap in new build (rolls back if it doesn't start)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $svc    = 'ACApi'
+          $dest   = 'C:\apps\api'
+          $prev   = 'C:\apps\api.prev'
+          $health = 'http://127.0.0.1:5000/swagger/index.html'
+
+          # appsettings.Local.json (secrets) and wwwroot (uploaded photos) live only on the VM - never overwrite them.
+          function Mirror($from, $to) {
+            robocopy $from $to /MIR /XF appsettings.Local.json /XD wwwroot /R:3 /W:2 /NFL /NDL /NJH /NP | Out-Host
+            if ($LASTEXITCODE -ge 8) { throw "robocopy $from -> $to failed ($LASTEXITCODE)" }
+          }
+          function Healthy {
+            for ($i = 0; $i -lt 20; $i++) {
+              try { Invoke-WebRequest $health -UseBasicParsing -TimeoutSec 5 | Out-Null; return $true }
+              catch { Start-Sleep -Seconds 3 }
+            }
+            return $false
+          }
+
+          Stop-Service $svc
+          if (Test-Path "$dest\AccessControl.exe") { Mirror $dest $prev }
+          Mirror "$env:GITHUB_WORKSPACE\publish" $dest
+          Start-Service $svc
+
+          if (-not (Healthy)) {
+            Write-Warning 'New build did not respond - rolling back to the previous one.'
+            Stop-Service $svc
+            if (Test-Path "$prev\AccessControl.exe") { Mirror $prev $dest; Start-Service $svc }
+            throw 'Deploy failed its health check; previous build restored.'
+          }
+          Write-Host 'API deployed and healthy.'
+          exit 0

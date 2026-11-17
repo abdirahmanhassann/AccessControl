@@ -470,5 +470,24 @@
             public int RoomId { get; set; }
             public int DepartmentId { get; set; }
         }
+
+        public struct GetRoomLeaveReviewsRequest
+        {
+            public string Token { get; set; }
+            public int Id { get; set; }
+            public int AccessRequestId { get; set; }
+            /// <summary>Pending, Approved, Rejected, or empty for all.</summary>
+            public string? Status { get; set; }
+        }
+
+        public struct ReviewRoomLeaveRequest
+        {
+            public string Token { get; set; }
+            public int Id { get; set; }
+            /// <summary>Approved or Rejected.</summary>
+            public string Status { get; set; }
+            /// <summary>Required when rejecting.</summary>
+            public string? Reason { get; set; }
+        }
     }
 }

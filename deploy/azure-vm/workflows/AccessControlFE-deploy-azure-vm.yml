@@ -1,0 +1,100 @@
+# Builds the frontend as a Node server and deploys it to the Azure Windows VM on every push to main.
+# One-time VM setup: see deploy/azure-vm/README.md in the AccessControl (API) repo.
+# Needs the repository variable VITE_API_BASE_URL (Settings > Secrets and variables > Actions > Variables),
+# e.g. https://accesscontrol-demo.uksouth.cloudapp.azure.com:8443
+name: Deploy frontend to Azure VM
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Check API URL is set
+        run: |
+          if [ -z "$VITE_API_BASE_URL" ]; then
+            echo "::error::Set the VITE_API_BASE_URL repository variable first."
+            exit 1
+          fi
+
+      # package-lock.json is out of step with package.json, so `npm ci` refuses it.
+      # Switch back to `npm ci` once the lock file is regenerated and committed.
+      - run: npm install --no-audit --no-fund
+
+      - name: Build for a plain Node server (instead of Vercel)
+        run: |
+          sed -i 's/preset: "vercel"/preset: "node-server"/' vite.config.ts
+          node scripts/with-app-env.mjs vite build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: .output/
+          include-hidden-files: true
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, windows, accesscontrol-vm]
+    steps:
+      - name: Clear previous download
+        shell: powershell
+        run: Remove-Item "$env:GITHUB_WORKSPACE\publish" -Recurse -Force -ErrorAction SilentlyContinue
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: publish
+
+      - name: Swap in new build (rolls back if it doesn't start)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $svc    = 'ACWeb'
+          $dest   = 'C:\apps\web'
+          $prev   = 'C:\apps\web.prev'
+          $health = 'http://127.0.0.1:3000/'
+
+          function Mirror($from, $to) {
+            robocopy $from $to /MIR /R:3 /W:2 /NFL /NDL /NJH /NP | Out-Host
+            if ($LASTEXITCODE -ge 8) { throw "robocopy $from -> $to failed ($LASTEXITCODE)" }
+          }
+          function Healthy {
+            for ($i = 0; $i -lt 20; $i++) {
+              try { Invoke-WebRequest $health -UseBasicParsing -TimeoutSec 5 | Out-Null; return $true }
+              catch { Start-Sleep -Seconds 3 }
+            }
+            return $false
+          }
+
+          Stop-Service $svc
+          if (Test-Path "$dest\server\index.mjs") { Mirror $dest $prev }
+          Mirror "$env:GITHUB_WORKSPACE\publish" $dest
+          Start-Service $svc
+
+          if (-not (Healthy)) {
+            Write-Warning 'New build did not respond - rolling back to the previous one.'
+            Stop-Service $svc
+            if (Test-Path "$prev\server\index.mjs") { Mirror $prev $dest; Start-Service $svc }
+            throw 'Deploy failed its health check; previous build restored.'
+          }
+          Write-Host 'Frontend deployed and healthy.'
+          exit 0

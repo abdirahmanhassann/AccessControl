@@ -366,9 +366,7 @@ namespace AccessControl.Processor
                         string role = row["Role"]?.ToString() ?? "";
                         bool active = row["IsActive"] is bool flag ? flag : true;
                         if (!active) continue;
-                        if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-                            || role.Equals("Manager", StringComparison.OrdinalIgnoreCase)
-                            || role.Equals("SiteManager", StringComparison.OrdinalIgnoreCase))
+                        if (IsManagerRole(role))
                         {
                             managers.ImportRow(row);
                         }
@@ -1323,7 +1321,7 @@ namespace AccessControl.Processor
             return false;
         }
 
-        public GenericResponse UpdateAccessRequest(
+        public async Task<GenericResponse> UpdateAccessRequest(
             int userId,
             int id,
             int workerId,
@@ -1373,6 +1371,13 @@ namespace AccessControl.Processor
                     expectedClockOutAt,
                     clockedOutAt,
                     completedAt);
+
+                // The worker (or a manager, for an overdue visit) has signed out of
+                // the room: hand it to the Keyman to check it was left as found.
+                if (id > 0 && (clockedOutAt.HasValue || completedAt.HasValue))
+                {
+                    await OpenRoomLeaveReview(id);
+                }
 
                 return CreateSuccessResponseNoData();
             }
@@ -2341,6 +2346,237 @@ namespace AccessControl.Processor
                     ex.Message + " " + ex.StackTrace,
                     0);
 
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Keyman: room-leave reviews
+        // ---------------------------------------------------------------
+
+        public const string KEYMAN_ROLE = "Keyman";
+
+        /// <summary>Roles with manager-level access to the console. Keyman is one of them.</summary>
+        public static bool IsManagerRole(string? role)
+        {
+            string r = (role ?? "").Trim();
+            return r.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                || r.Equals("SiteManager", StringComparison.OrdinalIgnoreCase)
+                || r.Equals("Manager", StringComparison.OrdinalIgnoreCase)
+                || r.Equals(KEYMAN_ROLE, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private string UserRole(int userId)
+        {
+            if (userId < 1) return "";
+            DataTable dt = _db.GetUsers(userId);
+            return dt.Rows.Count > 0 ? Col(dt.Rows[0], "Role") : "";
+        }
+
+        /// <summary>Only a Keyman (or an Admin standing in) signs off a room.</summary>
+        private bool CanReviewRoomLeave(int userId)
+        {
+            string role = UserRole(userId);
+            return role.Equals(KEYMAN_ROLE, StringComparison.OrdinalIgnoreCase)
+                || role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Keymen to ping for a room: those mapped to it the same way a manager is
+        /// (department or tower); if none are mapped, every active Keyman.
+        /// </summary>
+        private List<DataRow> KeymenForRoom(int roomId)
+        {
+            List<DataRow> keymen = new();
+            foreach (DataRow row in _db.GetUsers().Rows)
+            {
+                bool active = !row.Table.Columns.Contains("IsActive") || row["IsActive"] is not bool flag || flag;
+                if (active && Col(row, "Role").Equals(KEYMAN_ROLE, StringComparison.OrdinalIgnoreCase))
+                {
+                    keymen.Add(row);
+                }
+            }
+            if (roomId < 1) return keymen;
+
+            List<DataRow> mapped = keymen
+                .Where(k => int.TryParse(Col(k, "Id"), out int id) && _db.ManagerCanApprove(id, roomId, null))
+                .ToList();
+            return mapped.Count > 0 ? mapped : keymen;
+        }
+
+        /// <summary>
+        /// Called once the visit is signed out. Creates the pending review and pings
+        /// the Keyman (in-app, plus SMS when Twilio is on). Never fails the sign-out.
+        /// </summary>
+        private async Task OpenRoomLeaveReview(int accessRequestId)
+        {
+            try
+            {
+                DataRow review = _db.InsertRoomLeaveReview(accessRequestId);
+                if (review == null || !Convert.ToBoolean(review["Created"]))
+                {
+                    return; // already open or decided: ping only once
+                }
+
+                DataRow? visit = _db.GetRoomLeaveReviews(0, accessRequestId).Rows.Cast<DataRow>().FirstOrDefault();
+                string worker = visit == null ? "A worker" : $"{Col(visit, "WorkerFirstName")} {Col(visit, "WorkerLastName")}".Trim();
+                string room = visit == null ? $"request #{accessRequestId}" : RoomText(visit);
+                int roomId = visit != null && int.TryParse(Col(visit, "RoomId"), out int rid) ? rid : 0;
+                int? workerId = visit != null && int.TryParse(Col(visit, "WorkerId"), out int wid) ? wid : null;
+
+                string message = $"{worker} has left {room}. Check the room and approve or reject the room leave.";
+
+                _db.InsertAuditEvent(
+                    accessRequestId,
+                    workerId,
+                    null,
+                    "RoomLeaveRequested",
+                    $"{worker} signed out of {room}; waiting for the Keyman to check the room.");
+
+                foreach (DataRow keyman in KeymenForRoom(roomId))
+                {
+                    if (!int.TryParse(Col(keyman, "Id"), out int keymanId)) continue;
+                    _db.InsertNotification(keymanId, null, accessRequestId, "RoomLeaveReview", "IN_APP", message);
+
+                    string phone = Col(keyman, "PhoneNumber");
+                    if (_twilio && !string.IsNullOrWhiteSpace(phone))
+                    {
+                        try
+                        {
+                            await new TwilioHelper().SendPlainMessageAsync(phone, message + " Open SiteGate > Keyman.");
+                        }
+                        catch (Exception smsEx)
+                        {
+                            _db.LogError("AccessProcessor/OpenRoomLeaveReview", "Twilio SMS skipped: " + smsEx.Message, keymanId);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _db.LogError("AccessProcessor/OpenRoomLeaveReview", ex.Message + " " + ex.StackTrace, 0);
+            }
+        }
+
+        private static string RoomText(DataRow row)
+        {
+            string number = Col(row, "RoomNumber");
+            string name = Col(row, "RoomName");
+            string label = string.IsNullOrWhiteSpace(name) || name == number ? number : $"{number} {name}".Trim();
+            if (string.IsNullOrWhiteSpace(label)) label = "the room";
+            string area = Col(row, "WorkAreaName");
+            string site = Col(row, "SiteName");
+            string where = string.Join(", ", new[] { area, site }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            return string.IsNullOrWhiteSpace(where) ? label : $"{label} ({where})";
+        }
+
+        public GenericResponse GetRoomLeaveReviews(int userId, int id, int accessRequestId, string? status)
+        {
+            try
+            {
+                string? normalized = string.IsNullOrWhiteSpace(status) || status.Equals("all", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : NormalizeReviewStatus(status);
+                return CreateSuccessResponseWithData(_db.GetRoomLeaveReviews(id, accessRequestId, normalized));
+            }
+            catch (Exception ex)
+            {
+                _db.LogError("AccessProcessor/GetRoomLeaveReviews", ex.Message + " " + ex.StackTrace, userId);
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        private static string NormalizeReviewStatus(string status) =>
+            status.Trim().ToLowerInvariant() switch
+            {
+                "approved" or "approve" => "Approved",
+                "rejected" or "reject" => "Rejected",
+                _ => "Pending",
+            };
+
+        public async Task<GenericResponse> ReviewRoomLeave(int userId, int id, string status, string? reason)
+        {
+            try
+            {
+                if (!CanReviewRoomLeave(userId))
+                {
+                    return CreateFailureResponse("Only a Keyman can sign off a room.");
+                }
+
+                string decision = NormalizeReviewStatus(status ?? "");
+                if (decision == "Pending")
+                {
+                    return CreateFailureResponse("Choose approve or reject.");
+                }
+                reason = reason?.Trim();
+                if (decision == "Rejected" && string.IsNullOrWhiteSpace(reason))
+                {
+                    return CreateFailureResponse("Give a reason for rejecting the room leave.");
+                }
+
+                DataRow? review = _db.GetRoomLeaveReviews(id).Rows.Cast<DataRow>().FirstOrDefault();
+                if (review == null)
+                {
+                    return CreateFailureResponse("That room check no longer exists.");
+                }
+
+                if (!_db.UpdateRoomLeaveReview(id, decision, userId, string.IsNullOrWhiteSpace(reason) ? null : reason))
+                {
+                    return CreateFailureResponse("This room has already been checked.");
+                }
+
+                int accessRequestId = Convert.ToInt32(review["AccessRequestId"]);
+                int? workerId = int.TryParse(Col(review, "WorkerId"), out int wid) ? wid : null;
+                string room = RoomText(review);
+                string worker = $"{Col(review, "WorkerFirstName")} {Col(review, "WorkerLastName")}".Trim();
+
+                DataTable reviewer = _db.GetUsers(userId);
+                string keymanName = reviewer.Rows.Count > 0
+                    ? $"{Col(reviewer.Rows[0], "FirstName")} {Col(reviewer.Rows[0], "LastName")}".Trim()
+                    : $"User #{userId}";
+
+                _db.InsertAuditEvent(
+                    accessRequestId,
+                    workerId,
+                    userId,
+                    decision == "Approved" ? "RoomLeaveApproved" : "RoomLeaveRejected",
+                    decision == "Approved"
+                        ? $"Keyman {keymanName} checked {room} and approved the room leave."
+                        : $"Keyman {keymanName} rejected the room leave for {room}. Reason: {reason}");
+
+                if (decision == "Rejected")
+                {
+                    // Tell the managers who approved the visit, and the worker.
+                    string managerMessage = $"Keyman {keymanName} rejected the room leave for {room} ({worker}). Reason: {reason}";
+                    foreach (DataRow approval in _db.GetAccessRequestApprovals(0, accessRequestId, 0, null, null, 0, 0).Rows)
+                    {
+                        if (int.TryParse(Col(approval, "ApproverUserId"), out int approverId) && approverId > 0)
+                        {
+                            _db.InsertNotification(approverId, null, accessRequestId, "RoomLeaveRejected", "IN_APP", managerMessage);
+                        }
+                    }
+
+                    string phone = Col(review, "WorkerPhoneNumber");
+                    if (_twilio && !string.IsNullOrWhiteSpace(phone))
+                    {
+                        try
+                        {
+                            await new TwilioHelper().SendPlainMessageAsync(
+                                phone,
+                                $"The room check for {room} was not signed off. Reason: {reason}. Please contact the site team.");
+                        }
+                        catch (Exception smsEx)
+                        {
+                            _db.LogError("AccessProcessor/ReviewRoomLeave", "Twilio SMS skipped: " + smsEx.Message, userId);
+                        }
+                    }
+                }
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError("AccessProcessor/ReviewRoomLeave", ex.Message + " " + ex.StackTrace, userId);
                 return CreateFailureResponse(GENERIC_ERROR);
             }
         }

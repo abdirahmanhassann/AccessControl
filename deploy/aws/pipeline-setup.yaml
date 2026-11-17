@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  AccessControl CI/CD: lets GitHub Actions push images to ECR and deploy to the
+  EC2 server through SSM, using GitHub's OIDC sign-in (no access keys stored in GitHub).
+  Deploy once in the server's region (eu-west-2).
+
+Parameters:
+  GitHubOwner:
+    Type: String
+    Default: abdirahmanhassann
+    Description: GitHub user or organisation that owns both repositories.
+  ApiRepo:
+    Type: String
+    Default: AccessControl
+  ApiBranch:
+    Type: String
+    Default: master
+  WebRepo:
+    Type: String
+    Default: AccessControlFE
+  WebBranch:
+    Type: String
+    Default: main
+  InstanceId:
+    Type: AWS::EC2::Instance::Id
+    Description: The EC2 server running the Docker Compose stack.
+  ServerRoleName:
+    Type: String
+    Description: >-
+      Name of the IAM role attached to that instance (EC2 console > instance >
+      Security > IAM role). It is given permission to pull from ECR.
+  CreateGitHubOidcProvider:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: >-
+      Set to false if this account already has the
+      token.actions.githubusercontent.com identity provider (IAM > Identity providers).
+
+Conditions:
+  MakeOidcProvider: !Equals [!Ref CreateGitHubOidcProvider, 'true']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: MakeOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      ThumbprintList: [6938fd4d98bab03faadb97b34396831e3780aea1]
+
+  ApiRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: ac-api
+      ImageScanningConfiguration: { ScanOnPush: true }
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"Keep the last 15 images",
+            "selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":15},
+            "action":{"type":"expire"}}]}
+
+  WebRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: ac-web
+      ImageScanningConfiguration: { ScanOnPush: true }
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"Keep the last 15 images",
+            "selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":15},
+            "action":{"type":"expire"}}]}
+
+  # Assumed by the two workflows, and only from their deploy branches.
+  GitHubDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: accesscontrol-github-deploy
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - MakeOidcProvider
+                - !Ref GitHubOidcProvider # Ref is the ARN; also makes the role wait for it
+                - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${GitHubOwner}/${ApiRepo}:ref:refs/heads/${ApiBranch}
+                  - !Sub repo:${GitHubOwner}/${WebRepo}:ref:refs/heads/${WebBranch}
+      Policies:
+        - PolicyName: push-images-and-deploy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                Resource:
+                  - !GetAtt ApiRepository.Arn
+                  - !GetAtt WebRepository.Arn
+              - Effect: Allow
+                Action: ssm:SendCommand
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${InstanceId}
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                Resource: '*'
+
+  # Lets the server pull the images the pipeline pushes.
+  ServerPullPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: accesscontrol-server-ecr-pull
+      Roles: [!Ref ServerRoleName]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: ecr:GetAuthorizationToken
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:BatchGetImage
+              - ecr:GetDownloadUrlForLayer
+            Resource:
+              - !GetAtt ApiRepository.Arn
+              - !GetAtt WebRepository.Arn
+
+Outputs:
+  DeployRoleArn:
+    Description: Set this as the AWS_DEPLOY_ROLE_ARN repository variable in both GitHub repos.
+    Value: !GetAtt GitHubDeployRole.Arn
+  InstanceId:
+    Description: Set this as the AWS_INSTANCE_ID repository variable in both GitHub repos.
+    Value: !Ref InstanceId
+  ApiRepositoryUri:
+    Value: !GetAtt ApiRepository.RepositoryUri
+  WebRepositoryUri:
+    Value: !GetAtt WebRepository.RepositoryUri
