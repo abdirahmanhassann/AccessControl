@@ -61,6 +61,14 @@ build() { # build <service> <sha>
   esac
 }
 
+self_update() { # after an API deploy, take this script from the commit just deployed
+  local repo_copy="$SRC/AccessControl/deploy/autodeploy/autodeploy.sh"
+  [ -f "$repo_copy" ] || return 0
+  tr -d '\r' < "$repo_copy" > "$ROOT/autodeploy.sh.new" && bash -n "$ROOT/autodeploy.sh.new" || { rm -f "$ROOT/autodeploy.sh.new"; return 0; }
+  if cmp -s "$ROOT/autodeploy.sh.new" "$ROOT/autodeploy.sh"; then rm -f "$ROOT/autodeploy.sh.new"
+  else mv "$ROOT/autodeploy.sh.new" "$ROOT/autodeploy.sh"; log "autodeploy.sh updated from ${1:0:7}"; fi
+}
+
 deploy() { # deploy <service> <repo dir>
   local svc="$1" dir="$2" url sha current
   case "$svc" in
@@ -99,6 +107,7 @@ deploy() { # deploy <service> <repo dir>
     echo "$sha" > "$STATE/$svc.deployed"
     rm -f "$STATE/$svc.failed"
     log "$svc: live on ${sha:0:7}"
+    [ "$svc" = api ] && self_update "$sha"
     return 0
   fi
 
