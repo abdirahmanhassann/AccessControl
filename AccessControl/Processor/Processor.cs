@@ -545,7 +545,11 @@ namespace AccessControl.Processor
         {
             try
             {
-                DataTable dt = _db.GetWorkers(userId,null);
+                // No filter: this lists every worker for the console. The first
+                // argument of GetWorkers is a Worker id, not the caller, and
+                // passing userId here filtered the list down to the worker whose
+                // id happened to match the signed-in user — normally nobody.
+                DataTable dt = _db.GetWorkers(null, null);
 
                 return CreateSuccessResponseWithData(dt);
             }
