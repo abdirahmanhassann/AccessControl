@@ -439,6 +439,110 @@ namespace AccessControl.Database
                 sqlParams.ToArray());
         }
 
+        // ============================================================
+        // SETTINGS AND AUTO-BLOCKING
+        // ============================================================
+
+        public DataTable GetSettings()
+        {
+            List<SqlParameter> sqlParams = new();
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "SettingsGet",
+                sqlParams.ToArray());
+        }
+
+        public void SetSetting(string name, string value, int? updatedByUserId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputString("@Name", name, 100));
+            sqlParams.Add(
+                _conn.GenerateInputString("@Value", value, 400));
+
+            if (updatedByUserId.HasValue && updatedByUserId.Value > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@UpdatedByUserId", updatedByUserId.Value));
+            }
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "SettingsSet",
+                sqlParams.ToArray());
+        }
+
+        /// <summary>
+        /// Records the strike and returns how many of that kind the worker now
+        /// has open. The same access request cannot earn the same kind twice,
+        /// so a retried sign-out does not count again.
+        /// </summary>
+        public int AddWorkerStrike(
+            int workerId,
+            string kind,
+            int? accessRequestId,
+            string? detail)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@WorkerId", workerId));
+            sqlParams.Add(
+                _conn.GenerateInputString("@Kind", kind, 30));
+
+            if (accessRequestId.HasValue && accessRequestId.Value > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@AccessRequestId", accessRequestId.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(detail))
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputString("@Detail", detail, 400));
+            }
+
+            return _conn.ExecuteStoredProcedureAsScalarInt(
+                "WorkerStrikeAdd",
+                sqlParams.ToArray());
+        }
+
+        public DataTable GetWorkerStrikeCounts(int? workerId)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            if (workerId.HasValue && workerId.Value > 0)
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputInteger("@WorkerId", workerId.Value));
+            }
+
+            return _conn.ExecuteStoredProcedureAsDataTable(
+                "WorkerStrikeCountsGet",
+                sqlParams.ToArray());
+        }
+
+        /// <summary>Blocks or unblocks a worker. Unblocking forgives their open strikes.</summary>
+        public void SetWorkerBlock(int workerId, bool blocked, string? reason)
+        {
+            List<SqlParameter> sqlParams = new();
+
+            sqlParams.Add(
+                _conn.GenerateInputInteger("@WorkerId", workerId));
+            sqlParams.Add(
+                _conn.GenerateInputBool("@Blocked", blocked));
+
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                sqlParams.Add(
+                    _conn.GenerateInputString("@Reason", reason, 400));
+            }
+
+            _conn.ExecuteStoredProcedureNoReturn(
+                "WorkerSetBlock",
+                sqlParams.ToArray());
+        }
+
         public int InsertWorker(
             string firstName,
             string lastName,

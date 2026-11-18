@@ -489,5 +489,23 @@
             /// <summary>Required when rejecting.</summary>
             public string? Reason { get; set; }
         }
+
+        public struct UpdateSettingsRequest
+        {
+            public string Token { get; set; }
+            /// <summary>Late sign-outs before a worker is blocked. 0 turns the rule off.</summary>
+            public int AutoBlockOverdueCount { get; set; }
+            /// <summary>Rejected room leaves before a worker is blocked. 0 turns the rule off.</summary>
+            public int AutoBlockPhotoRejectedCount { get; set; }
+        }
+
+        public struct SetWorkerBlockRequest
+        {
+            public string Token { get; set; }
+            public int WorkerId { get; set; }
+            public bool Blocked { get; set; }
+            /// <summary>Shown to the managers; ignored when unblocking.</summary>
+            public string? Reason { get; set; }
+        }
     }
 }

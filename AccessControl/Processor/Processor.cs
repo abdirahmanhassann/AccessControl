@@ -565,6 +565,213 @@ namespace AccessControl.Processor
             }
         }
 
+        // ============================================================
+        // SETTINGS AND AUTO-BLOCKING
+        // ============================================================
+
+        private const string STRIKE_OVERDUE = "Overdue";
+        private const string STRIKE_PHOTO = "PhotoRejected";
+        private const string SETTING_OVERDUE_LIMIT = "AutoBlockOverdueCount";
+        private const string SETTING_PHOTO_LIMIT = "AutoBlockPhotoRejectedCount";
+
+        public GenericResponse GetSettings(int userId)
+        {
+            try
+            {
+                DataTable dt = _db.GetSettings();
+
+                return CreateSuccessResponseWithData(dt);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        /// <summary>
+        /// Saves the two auto-block thresholds. Zero turns a rule off, which is
+        /// why it is allowed; a negative number is not.
+        /// </summary>
+        public GenericResponse UpdateSettings(
+            int userId,
+            int overdueCount,
+            int photoRejectedCount)
+        {
+            try
+            {
+                if (!UserRole(userId).Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return CreateFailureResponse("Only an Admin can change these settings.");
+                }
+
+                if (overdueCount < 0 || photoRejectedCount < 0)
+                {
+                    return CreateFailureResponse("A limit cannot be negative. Use 0 to turn a rule off.");
+                }
+
+                _db.SetSetting(SETTING_OVERDUE_LIMIT, overdueCount.ToString(), userId);
+                _db.SetSetting(SETTING_PHOTO_LIMIT, photoRejectedCount.ToString(), userId);
+
+                return CreateSuccessResponseWithData(_db.GetSettings());
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        /// <summary>Blocks or unblocks a worker by hand, from the Workers tab.</summary>
+        public GenericResponse SetWorkerBlock(int userId, int workerId, bool blocked, string? reason)
+        {
+            try
+            {
+                if (workerId < 1)
+                {
+                    return CreateFailureResponse("No worker selected.");
+                }
+
+                string note = string.IsNullOrWhiteSpace(reason)
+                    ? "Blocked by a manager."
+                    : reason.Trim();
+
+                _db.SetWorkerBlock(workerId, blocked, blocked ? note : null);
+
+                _db.InsertAuditEvent(
+                    null,
+                    workerId,
+                    userId,
+                    blocked ? "WorkerBlocked" : "WorkerUnblocked",
+                    blocked ? note : "Unblocked by a manager; open strikes forgiven.");
+
+                return CreateSuccessResponseNoData();
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    userId);
+
+                return CreateFailureResponse(GENERIC_ERROR);
+            }
+        }
+
+        /// <summary>A numeric setting, or the fallback when it is missing or not a number.</summary>
+        private int SettingNumber(string name, int fallback)
+        {
+            try
+            {
+                foreach (DataRow row in _db.GetSettings().Rows)
+                {
+                    if (!string.Equals(Convert.ToString(row["Name"]), name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    return int.TryParse(Convert.ToString(row["Value"]), out int parsed) ? parsed : fallback;
+                }
+            }
+            catch
+            {
+                /* a missing Settings table must not stop a visit closing */
+            }
+
+            return fallback;
+        }
+
+        /// <summary>True when this worker is currently blocked.</summary>
+        private bool WorkerIsBlocked(int workerId)
+        {
+            try
+            {
+                if (workerId < 1)
+                {
+                    return false;
+                }
+
+                DataTable dt = _db.GetWorkers(workerId, null);
+                if (dt.Rows.Count == 0)
+                {
+                    return false;
+                }
+
+                return dt.Columns.Contains("BlockedAt") && dt.Rows[0]["BlockedAt"] != DBNull.Value;
+            }
+            catch
+            {
+                // Never lock a worker out because the check itself failed.
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Records a strike and blocks the worker once the open strikes of that
+        /// kind reach the manager's threshold.
+        ///
+        /// Deliberately swallows its own errors: this runs on the back of a
+        /// sign-out or a room check, and neither should fail because the rule
+        /// could not be applied.
+        /// </summary>
+        private void RecordStrike(int workerId, string kind, int accessRequestId, string detail)
+        {
+            try
+            {
+                if (workerId < 1)
+                {
+                    return;
+                }
+
+                int open = _db.AddWorkerStrike(
+                    workerId,
+                    kind,
+                    accessRequestId > 0 ? accessRequestId : null,
+                    detail);
+
+                int limit = SettingNumber(
+                    kind == STRIKE_OVERDUE ? SETTING_OVERDUE_LIMIT : SETTING_PHOTO_LIMIT,
+                    0);
+
+                // 0 means the rule is off.
+                if (limit < 1 || open < limit)
+                {
+                    return;
+                }
+
+                string what = kind == STRIKE_OVERDUE ? "late sign-outs" : "rejected room leaves";
+                string reason = $"Blocked automatically after {open} {what}.";
+
+                _db.SetWorkerBlock(workerId, true, reason);
+
+                _db.InsertAuditEvent(
+                    accessRequestId > 0 ? accessRequestId : null,
+                    workerId,
+                    null,
+                    "WorkerBlocked",
+                    reason);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError(
+                    MethodBase.GetCurrentMethod()?.Module + "/" +
+                    MethodBase.GetCurrentMethod()?.Name!,
+                    ex.Message + " " + ex.StackTrace,
+                    0);
+            }
+        }
+
         public GenericResponse InsertWorker(
             string firstName,
             string lastName,
@@ -991,6 +1198,14 @@ namespace AccessControl.Processor
                     return CreateFailureResponse("A manager must be selected to approve this request.");
                 }
 
+                // Blocked workers keep their phone verification and can still close
+                // an open visit; what they lose is the right to start a new one.
+                if (WorkerIsBlocked(workerId))
+                {
+                    return CreateFailureResponse(
+                        "This worker is blocked from requesting access. Speak to the site manager.");
+                }
+
                 int towerId = ResolveWorkAreaId(workAreaId, siteId);
                 int resolvedRoomId = ResolveRoomId(roomId, towerId, roomText, locationKind);
                 if (resolvedRoomId < 1)
@@ -1381,6 +1596,20 @@ namespace AccessControl.Processor
                 if (id > 0 && (clockedOutAt.HasValue || completedAt.HasValue))
                 {
                     await OpenRoomLeaveReview(id);
+
+                    // Signed out after the approved time frame had already ended.
+                    // The worker is refused a late clock-out above, so in practice
+                    // this is a manager closing an abandoned visit.
+                    DateTime signedOut = clockedOutAt ?? completedAt ?? DateTime.Now;
+                    DateTime? windowEnd = GetRequestWindowEnd(id);
+                    if (windowEnd.HasValue && signedOut > windowEnd.Value)
+                    {
+                        RecordStrike(
+                            workerId,
+                            STRIKE_OVERDUE,
+                            id,
+                            $"Signed out at {signedOut:HH:mm d MMM}, after the time frame ended at {windowEnd.Value:HH:mm d MMM}.");
+                    }
                 }
 
                 return CreateSuccessResponseNoData();
@@ -2550,6 +2779,12 @@ namespace AccessControl.Processor
 
                 if (decision == "Rejected")
                 {
+                    RecordStrike(
+                        workerId ?? 0,
+                        STRIKE_PHOTO,
+                        accessRequestId,
+                        $"Room leave rejected for {room}. Reason: {reason}");
+
                     // Tell the managers who approved the visit, and the worker.
                     string managerMessage = $"Keyman {keymanName} rejected the room leave for {room} ({worker}). Reason: {reason}";
                     foreach (DataRow approval in _db.GetAccessRequestApprovals(0, accessRequestId, 0, null, null, 0, 0).Rows)

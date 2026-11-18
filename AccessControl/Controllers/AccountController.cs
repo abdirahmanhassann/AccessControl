@@ -400,6 +400,79 @@ namespace AccessControl.Controllers
                 Newtonsoft.Json.Formatting.Indented);
         }
 
+        [HttpPost("getsettings")]
+        public string GetSettings(TokenOnlyRequest req)
+        {
+            int accountId = _security.CheckToken(req.Token);
+
+            if (accountId < 1)
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
+                    {
+                        Result = false,
+                        ErrorMessage = TOKEN_ERROR
+                    });
+            }
+
+            GenericResponse ret = _proc.GetSettings(accountId);
+
+            return JsonConvert.SerializeObject(
+                ret,
+                Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("updatesettings")]
+        public string UpdateSettings(UpdateSettingsRequest req)
+        {
+            int accountId = _security.CheckToken(req.Token);
+
+            if (accountId < 1)
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
+                    {
+                        Result = false,
+                        ErrorMessage = TOKEN_ERROR
+                    });
+            }
+
+            GenericResponse ret = _proc.UpdateSettings(
+                accountId,
+                req.AutoBlockOverdueCount,
+                req.AutoBlockPhotoRejectedCount);
+
+            return JsonConvert.SerializeObject(
+                ret,
+                Newtonsoft.Json.Formatting.Indented);
+        }
+
+        [HttpPost("setworkerblock")]
+        public string SetWorkerBlock(SetWorkerBlockRequest req)
+        {
+            int accountId = _security.CheckToken(req.Token);
+
+            if (accountId < 1)
+            {
+                return JsonConvert.SerializeObject(
+                    new GenericResponse()
+                    {
+                        Result = false,
+                        ErrorMessage = TOKEN_ERROR
+                    });
+            }
+
+            GenericResponse ret = _proc.SetWorkerBlock(
+                accountId,
+                req.WorkerId,
+                req.Blocked,
+                req.Reason);
+
+            return JsonConvert.SerializeObject(
+                ret,
+                Newtonsoft.Json.Formatting.Indented);
+        }
+
         [HttpPost("getworkers")]
         public string GetWorkers(TokenOnlyRequest req)
         {
