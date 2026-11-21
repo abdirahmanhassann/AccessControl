@@ -11,7 +11,7 @@ using static AccessControl.Model.Model;
 namespace AccessControl.Processor
 {
 
-    public class AccessProcessor
+    public partial class AccessProcessor
     {
         private IConfiguration _config;
         private DatabaseLogic _db;
@@ -1744,6 +1744,14 @@ namespace AccessControl.Processor
                         null);
                 }
 
+                // Rooms of a multi-room request: the room's keys follow its decision, and the
+                // worker is texted once, when every room has been decided (not per room).
+                int groupId = accessRequestId > 0 ? _db.GetAccessRequestGroupId(accessRequestId) : 0;
+                if (groupId > 0 && (approved || rejected || cancelled))
+                {
+                    _db.DecideAccessRequestKeys(accessRequestId, approved);
+                }
+
                 DataRow approver = _db.GetUsers(approverUserId).Rows[0];
                 string approverFirstName = approver.Field<string>("FirstName")!;
                 string approverLastName = approver.Field<string>("LastName")!;
@@ -1755,7 +1763,12 @@ namespace AccessControl.Processor
                     normalized,
                     $"Manager #{approverFirstName} {approverLastName} marked request #{accessRequestId} as {normalized}.");
 
-                DataRow dr = _db.GetRoomByAccessRequestId(accessRequestId);
+                if (groupId > 0)
+                {
+                    await NotifyGroupDecidedAsync(groupId);
+                }
+
+                DataRow? dr = groupId > 0 ? null : _db.GetRoomByAccessRequestId(accessRequestId);
                 if (dr != null)
                 {
                     string phone = dr.Table.Columns.Contains("PhoneNumber") ? dr.Field<string>("PhoneNumber") ?? "" : "";

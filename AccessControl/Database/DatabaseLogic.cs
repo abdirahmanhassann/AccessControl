@@ -5,7 +5,7 @@ using static AccessControl.Model.Model;
 
 namespace AccessControl.Database
 {
-    public class DatabaseLogic
+    public partial class DatabaseLogic
     {
         private DatabaseConnectivity _conn;
 

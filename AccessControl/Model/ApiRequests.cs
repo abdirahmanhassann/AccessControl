@@ -1,6 +1,6 @@
 ﻿namespace AccessControl.Model
 {
-    public class ApiRequests
+    public partial class ApiRequests
     {
         public struct TokenOnlyRequest
         {

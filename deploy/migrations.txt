@@ -3,3 +3,4 @@
 # Paths are from the root of this repository.
 AccessControl/Database/Keyman.sql
 AccessControl/Database/AutoBlock.sql
+AccessControl/Database/MultiRoomKeys.sql

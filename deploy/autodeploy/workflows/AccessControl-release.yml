@@ -1,5 +1,9 @@
-# Build the API on every push to master. If the image builds, move the `deploy` branch
-# to this commit; the server notices within ~2 minutes and deploys it (deploy/autodeploy).
+# On every push to master:
+#   1. database: load the schema into a throwaway SQL Server, run every script in
+#      deploy/migrations.txt twice (they must be safe to re-run), then the tests in deploy/tests.
+#   2. build: build the API image with the same Dockerfile the server uses.
+#   3. if both pass, move the `deploy` branch to this commit; the server notices
+#      within ~2 minutes and deploys it (deploy/autodeploy).
 name: Build and release API
 
 on:
@@ -14,17 +18,60 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+env:
+  CI_SA_PASSWORD: Ci-Throwaway-Passw0rd # throwaway database that only lives for this job
+
 jobs:
+  database:
+    runs-on: ubuntu-latest
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2025-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: Express
+          MSSQL_SA_PASSWORD: Ci-Throwaway-Passw0rd
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Ci-Throwaway-Passw0rd -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Schema, migrations (twice) and database tests
+        env:
+          CID: ${{ job.services.mssql.id }}
+        run: |
+          set -euo pipefail
+          run_sql() {
+            echo "::group::$1"
+            tr -d '\r' < "$1" > /tmp/run.sql
+            docker cp /tmp/run.sql "$CID:/tmp/run.sql"
+            docker exec "$CID" /opt/mssql-tools18/bin/sqlcmd -C -I -b -S localhost -U sa -P "$CI_SA_PASSWORD" -i /tmp/run.sql
+            echo "::endgroup::"
+          }
+          run_sql deploy/AccessControl.cloud.sql
+          mapfile -t migrations < <(tr -d '\r' < deploy/migrations.txt | grep -v '^[[:space:]]*#' | grep -v '^[[:space:]]*$')
+          for pass in 1 2; do
+            for f in "${migrations[@]}"; do run_sql "$f"; done
+          done
+          for t in deploy/tests/*.sql; do run_sql "$t"; done
+
   build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the API image (same Dockerfile the server uses)
+        run: docker build -f deploy/api.Dockerfile -t ac-api-ci .
+
+  release:
+    needs: [database, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Build the API image (same Dockerfile the server uses)
-        run: docker build -f deploy/api.Dockerfile -t ac-api-ci .
-
       - name: Release to the server
         run: |
           git push --force origin "HEAD:refs/heads/deploy"

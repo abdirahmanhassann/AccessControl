@@ -13,7 +13,7 @@ namespace AccessControl.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class AccessController : ControllerBase
+    public partial class AccessController : ControllerBase
     {
         private AccessProcessor _proc;
         private Encryptor _security;
