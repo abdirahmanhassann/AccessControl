@@ -1,0 +1,22 @@
+﻿[14:37:16] AccessControl local tests - 2026-11-21 14:37
+[14:37:16] Repo: C:\Users\abdi1\source\repos\AccessControl
+[14:37:16] == 1. dotnet build
+[14:37:23] BUILD: PASS (63 warning lines)
+[14:37:23] == 2. database scripts on ABDI\SQLEXPRESS01 (throwaway databases, dropped afterwards)
+[14:37:23] -- scenario A (AccessControl_CI_A_143723)
+[14:37:24]     migrations pass 1 OK (3 scripts)
+[14:37:24]     migrations pass 2 OK (3 scripts)
+           multiroom-keys tests passed
+           single-room compat tests passed
+[14:37:25] SCENARIO A: PASS
+[14:37:25]     dropped AccessControl_CI_A_143723
+[14:37:25] -- scenario B (AccessControl_CI_B_143725)
+[14:37:25]     applied AccessControl\Database\SiteQr.sql
+[14:37:25] SCENARIO B: SKIPPED - AccessControl\Database\Mappings.sql does not run on the base schema, so the server cannot have it as-is: Mappings.sql batch 27 failed: Invalid column name 'PhoneNumber'.
+      starts: CREATE OR ALTER PROCEDURE [dbo].[AccessRequestsGet]     @Id INT = NULL,     @WorkerId INT = NULL,
+[14:37:25]     dropped AccessControl_CI_B_143725
+[14:37:25] -- scenario C (AccessControl_CI_C_143725)
+[14:37:26] SCENARIO C: SKIPPED - AccessControl\Database\Mappings.sql does not run on the base schema, so the server cannot have it as-is: Mappings.sql batch 27 failed: Invalid column name 'PhoneNumber'.
+      starts: CREATE OR ALTER PROCEDURE [dbo].[AccessRequestsGet]     @Id INT = NULL,     @WorkerId INT = NULL,
+[14:37:26]     dropped AccessControl_CI_C_143725
+[14:37:26] == RESULT: ALL PASSED

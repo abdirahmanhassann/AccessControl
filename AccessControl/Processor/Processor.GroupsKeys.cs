@@ -271,6 +271,18 @@ namespace AccessControl.Processor
                     }
                 }
                 DataTable keys = _db.GetAccessRequestKeys(groupId: groupId);
+                if (userId < 1)
+                {
+                    // Without a staff token, leave out phone numbers.
+                    foreach (DataTable t in new[] { rooms, keys })
+                    {
+                        foreach (DataColumn c in t.Columns.Cast<DataColumn>()
+                                     .Where(c => c.ColumnName.Contains("Phone", StringComparison.OrdinalIgnoreCase)).ToList())
+                        {
+                            t.Columns.Remove(c);
+                        }
+                    }
+                }
                 return CreateSuccessResponseWithData(new { GroupId = groupId, Rooms = rooms, Keys = keys });
             }
             catch (Exception ex)
@@ -493,9 +505,10 @@ namespace AccessControl.Processor
                 if (rooms.Count == 0) return;
                 List<DataRow> keys = _db.GetAccessRequestKeys(groupId: groupId).Rows.Cast<DataRow>().ToList();
 
-                bool IsStatus(DataRow r, string s) => Col(r, "Status").Equals(s, StringComparison.OrdinalIgnoreCase);
-                List<DataRow> approved = rooms.Where(r => IsStatus(r, "Approved")).ToList();
-                List<DataRow> declined = rooms.Where(r => !IsStatus(r, "Approved")).ToList();
+                // The approver's decision, not the room's status, which moves on once the worker clocks in.
+                bool IsApproved(DataRow r) => Col(r, "ApprovalStatus").Equals("Approved", StringComparison.OrdinalIgnoreCase);
+                List<DataRow> approved = rooms.Where(IsApproved).ToList();
+                List<DataRow> declined = rooms.Where(r => !IsApproved(r)).ToList();
                 List<DataRow> approvedKeys = keys.Where(k => Col(k, "Status").Equals("Approved", StringComparison.OrdinalIgnoreCase)).ToList();
 
                 string Label(DataRow r) => RoomText(r);
@@ -506,8 +519,8 @@ namespace AccessControl.Processor
                 }
                 string KeyLine(DataRow k)
                 {
-                    string returnBy = DateTime.TryParse(Col(k, "ReturnBy"), out DateTime when)
-                        ? $"return by {when:HH:mm ddd d MMM}"
+                    string returnBy = DateTime.TryParse(Col(k, "ReturnBy"), out DateTime returnAt)
+                        ? $"return by {returnAt:HH:mm ddd d MMM}"
                         : "return when you leave";
                     return $"{Col(k, "KeyLabel")} for {RoomText(k)}, {returnBy}";
                 }
@@ -532,7 +545,7 @@ namespace AccessControl.Processor
                     if (int.TryParse(Col(r, "AccessRequestId"), out int rid))
                     {
                         _db.InsertNotification(null, workerId > 0 ? workerId : null, rid,
-                            IsStatus(r, "Approved") ? "Approved" : "Rejected", "SMS", message);
+                            IsApproved(r) ? "Approved" : "Rejected", "SMS", message);
                     }
                 }
 
@@ -552,13 +565,21 @@ namespace AccessControl.Processor
                 if (approvedKeys.Count == 0) return;
 
                 // The Keyman: which keys to have ready, for whom, and when they come back.
-                int firstKeyRoom = int.TryParse(Col(approvedKeys[0], "RoomId"), out int kr) ? kr : 0;
+                // Every Keyman covering any of the rooms, each told once.
+                List<DataRow> keymen = approvedKeys
+                    .Select(k => int.TryParse(Col(k, "RoomId"), out int kr) ? kr : 0)
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .SelectMany(KeymenForRoom)
+                    .GroupBy(u => Col(u, "Id"))
+                    .Select(g => g.First())
+                    .ToList();
                 int firstKeyRequest = int.TryParse(Col(approvedKeys[0], "AccessRequestId"), out int kq) ? kq : 0;
                 string company = Col(approvedKeys[0], "CompanyName");
                 string keymanMessage =
                     $"Keys to hand out to {workerName}{(string.IsNullOrWhiteSpace(company) ? "" : $" ({company})")}: " +
                     $"{string.Join("; ", approvedKeys.Select(KeyLine))}.";
-                foreach (DataRow keyman in KeymenForRoom(firstKeyRoom))
+                foreach (DataRow keyman in keymen)
                 {
                     if (!int.TryParse(Col(keyman, "Id"), out int keymanId)) continue;
                     _db.InsertNotification(keymanId, null, firstKeyRequest > 0 ? firstKeyRequest : null, "KeysToIssue", "IN_APP", keymanMessage);

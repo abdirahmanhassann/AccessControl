@@ -207,10 +207,11 @@ BEGIN
             INNER JOIN [dbo].[AccessRequests] ar ON ar.[Id] = ark.[AccessRequestId]
             WHERE ark.[KeyId] = k.[Id]
               AND (
-                    ark.[Status] = 'Issued'
+                    ark.[Status] IN ('Issued', 'Missing')
                     OR (ark.[Status] IN ('Requested', 'Approved')
                         AND @WorkFrom IS NOT NULL AND @WorkTo IS NOT NULL
-                        AND ar.[WorkFrom] < @WorkTo AND ar.[WorkTo] > @WorkFrom)
+                        AND ISNULL(ar.[WorkFrom], '00010101') < @WorkTo
+                        AND ISNULL(ar.[WorkTo], '99991231') > @WorkFrom)
                   )
         ) THEN 1 ELSE 0 END AS BIT) AS [Available],
         (SELECT TOP 1 CONCAT(w.[FirstName], N' ', w.[LastName])
@@ -306,54 +307,63 @@ BEGIN
 
     DECLARE @bad NVARCHAR(400);
 
-    SELECT TOP 1 @bad = CONCAT(N'Key #', x.[KeyId], N' does not open that room.')
-    FROM @keys x
-    LEFT JOIN [dbo].[Keys] k ON k.[Id] = x.[KeyId] AND k.[RoomId] = x.[RoomId] AND k.[IsActive] = 1
-    WHERE k.[Id] IS NULL;
-    IF @bad IS NOT NULL THROW 50011, @bad, 1;
+    BEGIN TRY
+        /* Checks and inserts in one transaction; the locks stop two people booking the same key at once. */
+        BEGIN TRANSACTION;
 
-    SELECT TOP 1 @bad = CONCAT(N'Key ', k.[Label], N' is already booked or out for that time. Choose another key or time.')
-    FROM @keys x
-    INNER JOIN [dbo].[Keys] k ON k.[Id] = x.[KeyId]
-    WHERE EXISTS (
-        SELECT 1
-        FROM [dbo].[AccessRequestKeys] ark
-        INNER JOIN [dbo].[AccessRequests] ar ON ar.[Id] = ark.[AccessRequestId]
-        WHERE ark.[KeyId] = x.[KeyId]
-          AND (ark.[Status] = 'Issued'
-               OR (ark.[Status] IN ('Requested', 'Approved')
-                   AND ar.[WorkFrom] < @WorkTo AND ar.[WorkTo] > @WorkFrom)));
-    IF @bad IS NOT NULL THROW 50012, @bad, 1;
+        SELECT TOP 1 @bad = CONCAT(N'Key #', x.[KeyId], N' does not open that room.')
+        FROM @keys x
+        LEFT JOIN [dbo].[Keys] k ON k.[Id] = x.[KeyId] AND k.[RoomId] = x.[RoomId] AND k.[IsActive] = 1
+        WHERE k.[Id] IS NULL;
+        IF @bad IS NOT NULL THROW 50011, @bad, 1;
 
-    BEGIN TRANSACTION;
+        SELECT TOP 1 @bad = CONCAT(N'Key ', k.[Label], N' is already booked or out for that time. Choose another key or time.')
+        FROM @keys x
+        INNER JOIN [dbo].[Keys] k ON k.[Id] = x.[KeyId]
+        WHERE EXISTS (
+            SELECT 1
+            FROM [dbo].[AccessRequestKeys] ark WITH (UPDLOCK, HOLDLOCK)
+            INNER JOIN [dbo].[AccessRequests] ar ON ar.[Id] = ark.[AccessRequestId]
+            WHERE ark.[KeyId] = x.[KeyId]
+              AND (ark.[Status] IN ('Issued', 'Missing')
+                   OR (ark.[Status] IN ('Requested', 'Approved')
+                       AND ISNULL(ar.[WorkFrom], '00010101') < ISNULL(@WorkTo, '99991231')
+                       AND ISNULL(ar.[WorkTo], '99991231') > ISNULL(@WorkFrom, '00010101'))));
+        IF @bad IS NOT NULL THROW 50012, @bad, 1;
 
-    INSERT INTO [dbo].[AccessRequestGroups]
-        ([WorkerId], [ApproverUserId], [Reason], [WorkType], [Description], [SupervisorName], [WorkFrom], [WorkTo])
-    VALUES
-        (@WorkerId, @ApproverUserId, @Reason, @WorkType, @Description, @SupervisorName, @WorkFrom, @WorkTo);
-    DECLARE @GroupId INT = CAST(SCOPE_IDENTITY() AS INT);
+        INSERT INTO [dbo].[AccessRequestGroups]
+            ([WorkerId], [ApproverUserId], [Reason], [WorkType], [Description], [SupervisorName], [WorkFrom], [WorkTo])
+        VALUES
+            (@WorkerId, @ApproverUserId, @Reason, @WorkType, @Description, @SupervisorName, @WorkFrom, @WorkTo);
+        DECLARE @GroupId INT = CAST(SCOPE_IDENTITY() AS INT);
 
-    DECLARE @created TABLE ([AccessRequestId] INT NOT NULL, [RoomId] INT NOT NULL);
+        DECLARE @created TABLE ([AccessRequestId] INT NOT NULL, [RoomId] INT NOT NULL);
 
-    INSERT INTO [dbo].[AccessRequests]
-        ([WorkerId], [RoomId], [Reason], [WorkType], [Description], [SupervisorName],
-         [WorkFrom], [WorkTo], [ExpectedClockOutAt], [CreatedAt], [GroupId])
-    OUTPUT inserted.[Id], inserted.[RoomId] INTO @created ([AccessRequestId], [RoomId])
-    SELECT @WorkerId, r.[RoomId], @Reason, @WorkType, @Description, @SupervisorName,
-           @WorkFrom, @WorkTo, @WorkTo, GETDATE(), @GroupId
-    FROM @rooms r
-    ORDER BY r.[Seq];
+        INSERT INTO [dbo].[AccessRequests]
+            ([WorkerId], [RoomId], [Reason], [WorkType], [Description], [SupervisorName],
+             [WorkFrom], [WorkTo], [ExpectedClockOutAt], [CreatedAt], [GroupId])
+        OUTPUT inserted.[Id], inserted.[RoomId] INTO @created ([AccessRequestId], [RoomId])
+        SELECT @WorkerId, r.[RoomId], @Reason, @WorkType, @Description, @SupervisorName,
+               @WorkFrom, @WorkTo, @WorkTo, GETDATE(), @GroupId
+        FROM @rooms r
+        ORDER BY r.[Seq];
 
-    INSERT INTO [dbo].[AccessRequestApprovals] ([AccessRequestId], [ApproverUserId], [Status])
-    SELECT c.[AccessRequestId], @ApproverUserId, 'PENDING'
-    FROM @created c;
+        INSERT INTO [dbo].[AccessRequestApprovals] ([AccessRequestId], [ApproverUserId], [Status])
+        SELECT c.[AccessRequestId], @ApproverUserId, 'PENDING'
+        FROM @created c;
 
-    INSERT INTO [dbo].[AccessRequestKeys] ([AccessRequestId], [KeyId], [Status], [ReturnBy])
-    SELECT c.[AccessRequestId], x.[KeyId], 'Requested', @WorkTo
-    FROM @created c
-    INNER JOIN @keys x ON x.[RoomId] = c.[RoomId];
+        INSERT INTO [dbo].[AccessRequestKeys] ([AccessRequestId], [KeyId], [Status], [ReturnBy])
+        SELECT c.[AccessRequestId], x.[KeyId], 'Requested', @WorkTo
+        FROM @created c
+        INNER JOIN @keys x ON x.[RoomId] = c.[RoomId];
 
-    COMMIT TRANSACTION;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        /* Undo everything, then pass the same error (50011/50012 etc.) back to the caller. */
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
 
     SELECT @GroupId AS [GroupId], c.[AccessRequestId], c.[RoomId]
     FROM @created c
@@ -461,7 +471,7 @@ BEGIN
       AND (@AccessRequestId IS NULL OR ark.[AccessRequestId] = @AccessRequestId)
       AND (@GroupId IS NULL OR ar.[GroupId] = @GroupId)
       AND (@Status IS NULL OR ark.[Status] = @Status)
-      AND (@Outstanding = 0 OR ark.[Status] IN ('Approved', 'Issued'))
+      AND (@Outstanding = 0 OR ark.[Status] IN ('Approved', 'Issued', 'Missing'))
     ORDER BY ark.[ReturnBy], k.[Label];
 END
 GO

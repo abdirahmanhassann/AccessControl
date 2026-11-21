@@ -83,7 +83,7 @@ namespace AccessControl.Model
             public int AccessRequestId { get; set; }
             public int GroupId { get; set; }
             public string? Status { get; set; }
-            /// <summary>Only keys still to hand out or still out (Approved, Issued).</summary>
+            /// <summary>Only keys still to hand out, still out, or missing (Approved, Issued, Missing).</summary>
             public bool Outstanding { get; set; }
         }
 

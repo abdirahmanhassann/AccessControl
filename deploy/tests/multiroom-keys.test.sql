@@ -9,7 +9,7 @@ SET XACT_ABORT ON;
 DECLARE @now DATETIME2(0) = SYSDATETIME();
 DECLARE @from DATETIME2(0) = DATEADD(HOUR, 1, @now), @to DATETIME2(0) = DATEADD(HOUR, 4, @now);
 
-INSERT INTO dbo.Sites ([Name], [IsActive], [CreatedAt]) VALUES (N'CI site', 1, @now);
+INSERT INTO dbo.Sites ([Name], [Reference], [IsActive], [CreatedAt]) VALUES (N'CI site', CONCAT(N'CI-', NEWID()), 1, @now);
 DECLARE @site INT = SCOPE_IDENTITY();
 INSERT INTO dbo.WorkAreas ([SiteId], [Name]) VALUES (@site, N'Tower A');
 DECLARE @wa INT = SCOPE_IDENTITY();
@@ -108,6 +108,27 @@ INSERT INTO @rows EXEC dbo.AccessRequestKeysUpdate @Id = @ark, @Status = 'Return
 INSERT INTO @rows EXEC dbo.AccessRequestKeysUpdate @Id = @ark, @Status = 'Issued', @UserId = @mgr;
 IF (SELECT SUM(n) FROM @rows) <> 3 THROW 60013, N'FAIL: key status moves not guarded as expected.', 1;
 IF (SELECT [Status] FROM dbo.AccessRequestKeys WHERE Id = @ark) <> 'Returned' THROW 60014, N'FAIL: key should end Returned.', 1;
+
+/* A booking with no times clashes with any time, and a missing key stays unavailable. */
+DECLARE @nt TABLE (GroupId INT, AccessRequestId INT, RoomId INT);
+SET @items = CONCAT(N'[{"roomId":', @r2, N',"keyIds":[', @k2, N']}]');
+INSERT INTO @nt EXEC dbo.AccessRequestGroupsInsert @WorkerId = @w2, @ApproverUserId = @mgr, @WorkFrom = NULL, @WorkTo = NULL, @Items = @items;
+IF (SELECT COUNT(*) FROM @nt) <> 1 THROW 60017, N'FAIL: a booking without times was refused.', 1;
+BEGIN TRY
+    EXEC dbo.AccessRequestGroupsInsert @WorkerId = @w, @ApproverUserId = @mgr, @WorkFrom = @from, @WorkTo = @to, @Items = @items;
+    THROW 60018, N'FAIL: a key booked with no times was booked again.', 1;
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() <> 50012 THROW;
+END CATCH
+IF @@TRANCOUNT <> 0 THROW 60019, N'FAIL: a refused booking left a transaction open.', 1;
+UPDATE dbo.AccessRequestKeys SET [Status] = 'Missing' WHERE AccessRequestId = (SELECT TOP 1 AccessRequestId FROM @nt);
+DELETE FROM @keys;
+INSERT INTO @keys EXEC dbo.KeysGet @RoomId = @r2;
+IF (SELECT Available FROM @keys WHERE Id = @k2) <> 0 THROW 60020, N'FAIL: a missing key shows as available.', 1;
+DELETE FROM @keys;
+INSERT INTO @keys EXEC dbo.KeysGet @RoomId = @r2, @WorkFrom = @from, @WorkTo = @to;
+IF (SELECT Available FROM @keys WHERE Id = @k2) <> 0 THROW 60021, N'FAIL: a missing key shows as available for a time.', 1;
 
 /* One strike per group, not per room. */
 DECLARE @s TABLE (OpenCount INT);
