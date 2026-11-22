@@ -38,14 +38,16 @@ healthy() { # ask through the caddy container, which can reach api:8080 and web:
 migrate() { # run the idempotent SQL scripts listed in deploy/migrations.txt
   local list="$SRC/AccessControl/deploy/migrations.txt" f
   [ -f "$list" ] || return 0
-  while IFS= read -r f; do
+  # The list is read on fd 3: docker compose reads stdin, and on fd 0 it would swallow
+  # the rest of the list so only the first script ran.
+  while IFS= read -r f <&3; do
     f="${f%$'\r'}"
     case "$f" in '' | '#'*) continue ;; esac
     log "api: applying $f"
-    compose cp "$SRC/AccessControl/$f" db:/tmp/migration.sql || return 1
+    compose cp "$SRC/AccessControl/$f" db:/tmp/migration.sql </dev/null || return 1
     compose exec -T db /opt/mssql-tools18/bin/sqlcmd -C -I -b -S localhost -U sa -P "$(sa_password)" \
-      -i /tmp/migration.sql || return 1
-  done < "$list"
+      -i /tmp/migration.sql </dev/null || return 1
+  done 3< "$list"
 }
 
 build() { # build <service> <sha>
