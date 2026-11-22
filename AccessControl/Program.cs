@@ -28,6 +28,8 @@ builder.Services.AddControllers()
         o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 builder.Services.AddOpenApi();
+// Reminds the Keyman and the worker about keys not returned on time.
+builder.Services.AddHostedService<AccessControl.Processor.LateKeyReminderService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>

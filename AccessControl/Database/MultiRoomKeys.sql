@@ -596,3 +596,29 @@ BEGIN
     SELECT @@ROWCOUNT AS [Claimed];
 END
 GO
+
+/* 13. Late-key reminders: when a reminder was sent for a key that is still out
+       after its return-by time, so each late key is reminded about once. */
+IF COL_LENGTH(N'dbo.AccessRequestKeys', N'LateNotifiedAt') IS NULL
+    ALTER TABLE [dbo].[AccessRequestKeys] ADD [LateNotifiedAt] DATETIME2(0) NULL;
+GO
+
+/* 14. Claim the keys that are out past their return-by time and not reminded about yet.
+       @Now is the API's local time (the same clock the return-by times are written in).
+       Each key is returned to exactly one caller, once. */
+CREATE OR ALTER PROCEDURE [dbo].[AccessRequestKeysClaimLate]
+    @Now DATETIME2(0)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @claimed TABLE ([Id] INT NOT NULL);
+    UPDATE [dbo].[AccessRequestKeys]
+    SET [LateNotifiedAt] = @Now
+    OUTPUT inserted.[Id] INTO @claimed ([Id])
+    WHERE [Status] = 'Issued'
+      AND [ReturnBy] IS NOT NULL
+      AND [ReturnBy] < @Now
+      AND [LateNotifiedAt] IS NULL;
+    SELECT [Id] FROM @claimed ORDER BY [Id];
+END
+GO

@@ -64,6 +64,15 @@ namespace AccessControl.Database
                 new[] { _conn.GenerateInputInteger("@GroupId", groupId) }) > 0;
         }
 
+        /// <summary>Keys out past their return-by time, each claimed once for a reminder.</summary>
+        public List<int> ClaimLateKeys(DateTime now)
+        {
+            DataTable dt = _conn.ExecuteStoredProcedureAsDataTable(
+                "AccessRequestKeysClaimLate",
+                new[] { _conn.GenerateInputDateTime("@Now", now) });
+            return dt.Rows.Cast<DataRow>().Select(r => Convert.ToInt32(r["Id"])).ToList();
+        }
+
         public DataTable GetKeys(
             int id = 0,
             int roomId = 0,

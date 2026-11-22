@@ -499,6 +499,121 @@ namespace AccessControl.Processor
 
         // ------------------------------------------------- group decision message
 
+        /// <summary>
+        /// Keys handed out for this room and not back yet (missing ones flagged), e.g.
+        /// "13.3-A, Gate key (marked missing)". Empty when none. Never throws.
+        /// </summary>
+        private string KeysStillOut(int accessRequestId)
+        {
+            try
+            {
+                IEnumerable<string> labels = _db.GetAccessRequestKeys(accessRequestId: accessRequestId, outstanding: true)
+                    .Rows.Cast<DataRow>()
+                    .Where(k => Col(k, "Status") is "Issued" or "Missing")
+                    .Select(k => Col(k, "Status") == "Missing" ? $"{Col(k, "KeyLabel")} (marked missing)" : Col(k, "KeyLabel"));
+                return string.Join(", ", labels);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError("AccessProcessor/KeysStillOut", ex.ToString(), 0);
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Sends one reminder per room for keys still out after their return-by time:
+        /// the Keymen for that room (in-app, plus SMS when Twilio is on) and the worker (SMS).
+        /// Each late key is claimed once in the database, so a reminder is never repeated.
+        /// Returns how many keys were reminded about. Called by the background reminder.
+        /// </summary>
+        public async Task<int> RemindLateKeysAsync()
+        {
+            List<int> ids;
+            try
+            {
+                ids = _db.ClaimLateKeys(DateTime.Now);
+            }
+            catch (Exception ex)
+            {
+                _db.LogError("AccessProcessor/RemindLateKeys", ex.ToString(), 0);
+                return 0;
+            }
+
+            List<DataRow> late = new();
+            foreach (int id in ids)
+            {
+                try
+                {
+                    DataRow? row = _db.GetAccessRequestKeys(id: id).Rows.Cast<DataRow>().FirstOrDefault();
+                    if (row != null) late.Add(row);
+                }
+                catch (Exception ex)
+                {
+                    _db.LogError("AccessProcessor/RemindLateKeys", ex.ToString(), 0);
+                }
+            }
+
+            foreach (IGrouping<string, DataRow> visit in late.GroupBy(r => Col(r, "AccessRequestId")))
+            {
+                try
+                {
+                    DataRow first = visit.First();
+                    int accessRequestId = int.TryParse(visit.Key, out int ar) ? ar : 0;
+                    int roomId = int.TryParse(Col(first, "RoomId"), out int rid) ? rid : 0;
+                    int? workerId = int.TryParse(Col(first, "WorkerId"), out int wid) ? wid : null;
+                    string worker = $"{Col(first, "WorkerFirstName")} {Col(first, "WorkerLastName")}".Trim();
+                    string company = Col(first, "CompanyName");
+                    string room = RoomText(first);
+                    string labels = string.Join(", ", visit.Select(k => Col(k, "KeyLabel")));
+                    string due = DateTime.TryParse(Col(first, "ReturnBy"), out DateTime returnBy) ? $"{returnBy:HH:mm ddd d MMM}" : "earlier";
+                    string plural = visit.Count() == 1 ? "Key" : "Keys";
+                    string who = string.IsNullOrWhiteSpace(company) ? worker : $"{worker} ({company})";
+
+                    string keymanMessage = $"{plural} {labels} for {room} not returned: {who} was due to bring {(visit.Count() == 1 ? "it" : "them")} back by {due}.";
+                    _db.InsertAuditEvent(accessRequestId > 0 ? accessRequestId : null, workerId, null, "KeyLate", keymanMessage);
+
+                    foreach (DataRow keyman in KeymenForRoom(roomId))
+                    {
+                        if (!int.TryParse(Col(keyman, "Id"), out int keymanId)) continue;
+                        _db.InsertNotification(keymanId, null, accessRequestId > 0 ? accessRequestId : null, "KeyLate", "IN_APP", keymanMessage);
+                        string keymanPhone = Col(keyman, "PhoneNumber");
+                        if (_twilio && !string.IsNullOrWhiteSpace(keymanPhone))
+                        {
+                            try
+                            {
+                                await new TwilioHelper().SendPlainMessageAsync(keymanPhone, keymanMessage + " Open SiteGate > Keyman > Keys.");
+                            }
+                            catch (Exception smsEx)
+                            {
+                                _db.LogError("AccessProcessor/RemindLateKeys", "Twilio SMS skipped: " + smsEx.Message, keymanId);
+                            }
+                        }
+                    }
+
+                    string workerMessage = $"SiteGate: please return {plural.ToLowerInvariant()} {labels} for {room} to the Keyman. {(visit.Count() == 1 ? "It was" : "They were")} due back by {due}.";
+                    _db.InsertNotification(null, workerId, accessRequestId > 0 ? accessRequestId : null, "KeyLate", "SMS", workerMessage);
+                    string workerPhone = Col(first, "WorkerPhoneNumber");
+                    if (_twilio && !string.IsNullOrWhiteSpace(workerPhone))
+                    {
+                        try
+                        {
+                            await new TwilioHelper().SendPlainMessageAsync(workerPhone, workerMessage);
+                        }
+                        catch (Exception smsEx)
+                        {
+                            _db.LogError("AccessProcessor/RemindLateKeys", "Twilio SMS skipped: " + smsEx.Message, 0);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _db.LogError("AccessProcessor/RemindLateKeys", ex.ToString(), 0);
+                }
+            }
+
+            return late.Count;
+        }
+
         /// <summary>Typed key names: trimmed, inner spaces collapsed, blanks and repeats dropped.</summary>
         private static List<string> CleanKeyLabels(List<string>? labels)
         {

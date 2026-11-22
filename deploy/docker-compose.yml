@@ -7,6 +7,7 @@ services:
       MSSQL_PID: Express
       MSSQL_SA_PASSWORD: ${SA_PASSWORD}
       MSSQL_MEMORY_LIMIT_MB: "1536"
+      TZ: Europe/London
     volumes: [dbdata:/var/opt/mssql]
     restart: unless-stopped
     healthcheck:
@@ -19,6 +20,7 @@ services:
     environment:
       ConnectionStrings__AccessControlDB: "Server=db,1433;Database=AccessControl;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
       PublicApiBaseUrl: https://${API_HOST}
+      TZ: Europe/London
     volumes: [uploads:/app/wwwroot/uploads]
     depends_on: { db: { condition: service_healthy } }
     restart: unless-stopped

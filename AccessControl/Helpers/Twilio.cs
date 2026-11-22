@@ -34,6 +34,22 @@ public class TwilioHelper
         }
     }
 
+    /// <summary>
+    /// Twilio needs international format. UK numbers as people type them
+    /// ("07700 900123", "447700900123", "0044 7700 900123") become "+447700900123";
+    /// anything already starting with "+" only loses its spaces.
+    /// </summary>
+    public static string ToE164(string number)
+    {
+        string raw = (number ?? "").Trim();
+        string digits = new string(raw.Where(char.IsDigit).ToArray());
+        if (raw.StartsWith("+")) return "+" + digits;
+        if (digits.StartsWith("00")) return "+" + digits[2..];
+        if (digits.StartsWith("0") && digits.Length == 11) return "+44" + digits[1..];
+        if (digits.StartsWith("44") && digits.Length == 12) return "+" + digits;
+        return raw;
+    }
+
     public async Task<MessageResource> SendPlainMessageAsync(string toNumber, string body)
     {
         if (string.IsNullOrWhiteSpace(toNumber)) throw new ArgumentException(nameof(toNumber));
@@ -41,7 +57,7 @@ public class TwilioHelper
         return await MessageResource.CreateAsync(
             body: body,
             from: new PhoneNumber(_fromNumber),
-            to: new PhoneNumber(toNumber)
+            to: new PhoneNumber(ToE164(toNumber))
         );
     }
     public async Task<MessageResource> SendMessageAsync(string toNumber, int code)
@@ -50,7 +66,7 @@ public class TwilioHelper
         return await MessageResource.CreateAsync(
             body: $"Your Verification Code is {code:D6}. It expires in 5 minutes. Do not share it",
             from: new PhoneNumber(_fromNumber),
-            to: new PhoneNumber(toNumber)
+            to: new PhoneNumber(ToE164(toNumber))
         );
     }
     public async Task<MessageResource> StatusUpdateAsync(string status, string toNumber, string roomName,string comment)
@@ -66,7 +82,7 @@ public class TwilioHelper
             return await MessageResource.CreateAsync(
                 body: smsBody,
                 from: new PhoneNumber(_fromNumber),
-                to: new PhoneNumber(toNumber)
+                to: new PhoneNumber(ToE164(toNumber))
             );
         }
         catch (ApiException)
@@ -83,7 +99,7 @@ public class TwilioHelper
             return await MessageResource.CreateAsync(
                 body: smsBody,
                 from: new PhoneNumber(_fromNumber),
-                to: new PhoneNumber(toNumber)
+                to: new PhoneNumber(ToE164(toNumber))
             );
         }
         catch (ApiException)
@@ -125,4 +141,4 @@ public class TwilioHelper
             throw;
         }
     }
-}
+}

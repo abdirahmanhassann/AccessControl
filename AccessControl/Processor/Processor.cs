@@ -2671,6 +2671,11 @@ namespace AccessControl.Processor
                 int? workerId = visit != null && int.TryParse(Col(visit, "WorkerId"), out int wid) ? wid : null;
 
                 string message = $"{worker} has left {room}. Check the room and approve or reject the room leave.";
+                string keysOut = KeysStillOut(accessRequestId);
+                if (keysOut.Length > 0)
+                {
+                    message += $" Keys still to collect: {keysOut}.";
+                }
 
                 _db.InsertAuditEvent(
                     accessRequestId,
@@ -2934,4 +2939,4 @@ namespace AccessControl.Processor
             return value is TimeSpan ts ? ts : TimeSpan.Parse(value.ToString()!);
         }
     }
-}
+}

@@ -177,5 +177,20 @@ IF (SELECT COUNT(*) FROM dbo.Keys WHERE RoomId = @r3) <> 2 THROW 60028, N'FAIL: 
 IF NOT EXISTS (SELECT 1 FROM dbo.AccessRequestKeys WHERE KeyId = @spare AND AccessRequestId = (SELECT TOP 1 AccessRequestId FROM @tk))
     THROW 60029, N'FAIL: retired key typed again not attached.', 1;
 
+/* Late-key reminders: only keys handed out and past their return-by time, each claimed once. */
+DECLARE @late TABLE (Id INT);
+INSERT INTO @late EXEC dbo.AccessRequestKeysClaimLate @Now = @now;
+IF EXISTS (SELECT 1 FROM @late) THROW 60030, N'FAIL: a key was claimed as late before any was out past its time.', 1;
+DECLARE @spareBooking INT = (SELECT TOP 1 Id FROM dbo.AccessRequestKeys WHERE KeyId = @spare);
+UPDATE dbo.AccessRequestKeys SET [Status] = 'Issued', ReturnBy = DATEADD(HOUR, -1, @now) WHERE Id = @spareBooking;
+INSERT INTO @late EXEC dbo.AccessRequestKeysClaimLate @Now = @now;
+IF (SELECT COUNT(*) FROM @late) <> 1 OR NOT EXISTS (SELECT 1 FROM @late WHERE Id = @spareBooking)
+    THROW 60031, N'FAIL: the late key was not claimed exactly once.', 1;
+IF (SELECT LateNotifiedAt FROM dbo.AccessRequestKeys WHERE Id = @spareBooking) IS NULL
+    THROW 60032, N'FAIL: the reminder time was not recorded.', 1;
+DELETE FROM @late;
+INSERT INTO @late EXEC dbo.AccessRequestKeysClaimLate @Now = @now;
+IF EXISTS (SELECT 1 FROM @late) THROW 60033, N'FAIL: a late key was claimed twice.', 1;
+
 PRINT 'multiroom-keys tests passed';
 GO
