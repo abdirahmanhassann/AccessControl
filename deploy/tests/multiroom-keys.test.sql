@@ -142,5 +142,40 @@ DECLARE @grp TABLE (n INT);
 INSERT INTO @grp SELECT 1 FROM sys.dm_exec_describe_first_result_set(N'EXEC dbo.AccessRequestGroupGet @GroupId = 1', NULL, 0) WHERE name = 'ApprovalId';
 IF NOT EXISTS (SELECT 1 FROM @grp) THROW 60016, N'FAIL: AccessRequestGroupGet has no ApprovalId column.', 1;
 
+/* Typed keys: a new name is registered once, the same name in another style matches it,
+   and a retired key with that name is brought back instead of duplicated. */
+INSERT INTO dbo.Rooms ([WorkAreaId], [RoomNumber], [Name]) VALUES (@wa, N'1.03', N'Apartment 1.03');
+DECLARE @r3 INT = SCOPE_IDENTITY();
+DECLARE @tk TABLE (GroupId INT, AccessRequestId INT, RoomId INT);
+SET @items = CONCAT(N'[{"roomId":', @r3, N',"keyIds":[],"keyLabels":["  Gate   key ","gate-key",""]}]');
+INSERT INTO @tk EXEC dbo.AccessRequestGroupsInsert @WorkerId = @w, @ApproverUserId = @mgr, @WorkFrom = @from, @WorkTo = @to, @Items = @items;
+IF (SELECT COUNT(*) FROM dbo.Keys WHERE RoomId = @r3) <> 1 THROW 60022, N'FAIL: typed key not registered exactly once.', 1;
+IF (SELECT COUNT(*) FROM dbo.AccessRequestKeys WHERE AccessRequestId = (SELECT TOP 1 AccessRequestId FROM @tk)) <> 1
+    THROW 60023, N'FAIL: typed key not attached to the request.', 1;
+IF NOT EXISTS (SELECT 1 FROM dbo.Keys WHERE RoomId = @r3 AND IsActive = 1 AND Notes = N'Added from a worker request')
+    THROW 60024, N'FAIL: typed key not active or not marked as added by a worker.', 1;
+
+SET @items = CONCAT(N'[{"roomId":', @r3, N',"keyLabels":["GATE KEY"]}]');
+BEGIN TRY
+    EXEC dbo.AccessRequestGroupsInsert @WorkerId = @w2, @ApproverUserId = @mgr, @WorkFrom = @from, @WorkTo = @to, @Items = @items;
+    THROW 60025, N'FAIL: the same key typed differently was booked twice for one time.', 1;
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() <> 50012 THROW;
+END CATCH
+IF (SELECT COUNT(*) FROM dbo.Keys WHERE RoomId = @r3) <> 1 THROW 60026, N'FAIL: the same key typed differently made a second key.', 1;
+
+INSERT INTO @t EXEC dbo.KeysInsert @RoomId = @r3, @Label = N'Spare';
+DECLARE @spare INT = (SELECT TOP 1 Id FROM @t); DELETE FROM @t;
+UPDATE dbo.Keys SET IsActive = 0 WHERE Id = @spare;
+DECLARE @later1 DATETIME2(0) = DATEADD(DAY, 3, @from), @later2 DATETIME2(0) = DATEADD(DAY, 3, @to);
+DELETE FROM @tk;
+SET @items = CONCAT(N'[{"roomId":', @r3, N',"keyLabels":["spare"]}]');
+INSERT INTO @tk EXEC dbo.AccessRequestGroupsInsert @WorkerId = @w2, @ApproverUserId = @mgr, @WorkFrom = @later1, @WorkTo = @later2, @Items = @items;
+IF (SELECT IsActive FROM dbo.Keys WHERE Id = @spare) <> 1 THROW 60027, N'FAIL: retired key typed again was not brought back.', 1;
+IF (SELECT COUNT(*) FROM dbo.Keys WHERE RoomId = @r3) <> 2 THROW 60028, N'FAIL: retired key typed again was duplicated.', 1;
+IF NOT EXISTS (SELECT 1 FROM dbo.AccessRequestKeys WHERE KeyId = @spare AND AccessRequestId = (SELECT TOP 1 AccessRequestId FROM @tk))
+    THROW 60029, N'FAIL: retired key typed again not attached.', 1;
+
 PRINT 'multiroom-keys tests passed';
 GO

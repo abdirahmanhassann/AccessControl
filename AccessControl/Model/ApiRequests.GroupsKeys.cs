@@ -11,6 +11,8 @@ namespace AccessControl.Model
             public string? RoomText { get; set; }
             public string? LocationKind { get; set; }
             public List<int>? KeyIds { get; set; }
+            /// <summary>Keys typed by the worker; matched to the room's register or added to it.</summary>
+            public List<string>? KeyLabels { get; set; }
         }
 
         public struct InsertAccessRequestGroupRequest

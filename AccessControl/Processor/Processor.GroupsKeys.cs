@@ -12,6 +12,8 @@ namespace AccessControl.Processor
     public partial class AccessProcessor
     {
         private const int MAX_ROOMS_PER_REQUEST = 20;
+        private const int MAX_TYPED_KEYS_PER_ROOM = 10;
+        private const int MAX_KEY_LABEL_LENGTH = 100;
 
         /// <summary>THROW numbers the procedures use for messages meant for the user.</summary>
         private static bool IsUserSqlError(SqlException ex) => ex.Number >= 50000 && ex.Number < 50100;
@@ -110,7 +112,7 @@ namespace AccessControl.Processor
                 }
 
                 DateTime now = DateTime.Now;
-                List<(int RoomId, string Label, List<int> KeyIds)> accepted = new();
+                List<(int RoomId, string Label, List<int> KeyIds, List<string> KeyLabels)> accepted = new();
                 List<SkippedRoom> skipped = new();
 
                 foreach (GroupRoomItem item in items)
@@ -147,7 +149,17 @@ namespace AccessControl.Processor
                         return CreateFailureResponse($"That manager is not assigned to {label}.");
                     }
 
-                    accepted.Add((roomId, label, (item.KeyIds ?? new()).Where(k => k > 0).Distinct().ToList()));
+                    List<string> typedKeys = CleanKeyLabels(item.KeyLabels);
+                    if (typedKeys.Count > MAX_TYPED_KEYS_PER_ROOM)
+                    {
+                        return CreateFailureResponse($"Up to {MAX_TYPED_KEYS_PER_ROOM} typed keys per room ({label}).");
+                    }
+                    if (typedKeys.Any(k => k.Length > MAX_KEY_LABEL_LENGTH))
+                    {
+                        return CreateFailureResponse($"Key names can be up to {MAX_KEY_LABEL_LENGTH} characters.");
+                    }
+
+                    accepted.Add((roomId, label, (item.KeyIds ?? new()).Where(k => k > 0).Distinct().ToList(), typedKeys));
                 }
 
                 if (accepted.Count == 0)
@@ -158,7 +170,7 @@ namespace AccessControl.Processor
                 }
 
                 string itemsJson = JsonSerializer.Serialize(
-                    accepted.Select(a => new { roomId = a.RoomId, keyIds = a.KeyIds }));
+                    accepted.Select(a => new { roomId = a.RoomId, keyIds = a.KeyIds, keyLabels = a.KeyLabels }));
 
                 DataTable created;
                 try
@@ -486,6 +498,22 @@ namespace AccessControl.Processor
         }
 
         // ------------------------------------------------- group decision message
+
+        /// <summary>Typed key names: trimmed, inner spaces collapsed, blanks and repeats dropped.</summary>
+        private static List<string> CleanKeyLabels(List<string>? labels)
+        {
+            List<string> result = new();
+            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+            foreach (string raw in labels ?? new())
+            {
+                string label = string.Join(' ', (raw ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+                if (label.Length == 0) continue;
+                string norm = label.Replace(" ", "").Replace("-", "").Replace("_", "");
+                if (norm.Length == 0 || !seen.Add(norm)) continue;
+                result.Add(label);
+            }
+            return result;
+        }
 
         /// <summary>
         /// Called after a manager decides one room of a group. Once every room has a

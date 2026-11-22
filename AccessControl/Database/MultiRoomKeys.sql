@@ -267,7 +267,9 @@ GO
 
 /* 7. Submit a multi-room request in one transaction: the group, one access
       request and one pending approval per room, and the keys asked for.
-      @Items is JSON: [{"roomId": 12, "keyIds": [3, 4]}, ...]
+      @Items is JSON: [{"roomId": 12, "keyIds": [3, 4], "keyLabels": ["Gate key"]}, ...]
+      keyLabels are keys the worker typed: matched to the room's key with the same name
+      (ignoring capitals, spaces, hyphens, underscores), or added to the register.
       Fails as a whole (nothing saved) if a key does not open that room or is
       already taken for an overlapping time frame. */
 CREATE OR ALTER PROCEDURE [dbo].[AccessRequestGroupsInsert]
@@ -285,10 +287,11 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    DECLARE @rooms TABLE ([Seq] INT IDENTITY(1,1), [RoomId] INT NOT NULL, [KeyIds] NVARCHAR(MAX) NULL);
-    INSERT INTO @rooms ([RoomId], [KeyIds])
-    SELECT j.[roomId], j.[keyIds]
-    FROM OPENJSON(@Items) WITH ([roomId] INT '$.roomId', [keyIds] NVARCHAR(MAX) '$.keyIds' AS JSON) j
+    DECLARE @rooms TABLE ([Seq] INT IDENTITY(1,1), [RoomId] INT NOT NULL, [KeyIds] NVARCHAR(MAX) NULL, [KeyLabels] NVARCHAR(MAX) NULL);
+    INSERT INTO @rooms ([RoomId], [KeyIds], [KeyLabels])
+    SELECT j.[roomId], j.[keyIds], j.[keyLabels]
+    FROM OPENJSON(@Items) WITH ([roomId] INT '$.roomId', [keyIds] NVARCHAR(MAX) '$.keyIds' AS JSON,
+                                [keyLabels] NVARCHAR(MAX) '$.keyLabels' AS JSON) j
     WHERE j.[roomId] IS NOT NULL AND j.[roomId] > 0;
 
     /* The same room twice keeps its first entry. */
@@ -310,6 +313,59 @@ BEGIN
     BEGIN TRY
         /* Checks and inserts in one transaction; the locks stop two people booking the same key at once. */
         BEGIN TRANSACTION;
+
+        /* Keys the worker typed: use the room's key with the same name (ignoring capitals,
+           spaces, hyphens and underscores), bringing a retired one back, or register a new one. */
+        DECLARE @typed TABLE ([RoomId] INT NOT NULL, [Label] NVARCHAR(100) NOT NULL, [Norm] NVARCHAR(100) NOT NULL, [KeyId] INT NULL);
+        INSERT INTO @typed ([RoomId], [Label], [Norm])
+        SELECT t.[RoomId], t.[Label], t.[Norm]
+        FROM (
+            SELECT r.[RoomId], x.[Label], x.[Norm],
+                   ROW_NUMBER() OVER (PARTITION BY r.[RoomId], x.[Norm] ORDER BY r.[Seq], CAST(l.[key] AS INT)) AS [Rn]
+            FROM @rooms r
+            CROSS APPLY OPENJSON(ISNULL(r.[KeyLabels], N'[]')) l
+            CROSS APPLY (SELECT LEFT(LTRIM(RTRIM(CAST(l.[value] AS NVARCHAR(400)))), 100) AS [Label]) v
+            CROSS APPLY (SELECT v.[Label] AS [Label],
+                                UPPER(REPLACE(REPLACE(REPLACE(v.[Label], N' ', N''), N'-', N''), N'_', N'')) AS [Norm]) x
+            WHERE l.[type] = 1 AND x.[Norm] <> N''
+        ) t
+        WHERE t.[Rn] = 1;
+
+        IF EXISTS (SELECT 1 FROM @typed)
+        BEGIN
+            UPDATE t SET [KeyId] = m.[Id]
+            FROM @typed t
+            CROSS APPLY (
+                SELECT TOP 1 k.[Id]
+                FROM [dbo].[Keys] k WITH (UPDLOCK, HOLDLOCK)
+                WHERE k.[RoomId] = t.[RoomId]
+                  AND UPPER(REPLACE(REPLACE(REPLACE(k.[Label], N' ', N''), N'-', N''), N'_', N'')) = t.[Norm]
+                ORDER BY k.[IsActive] DESC, k.[Id]
+            ) m;
+
+            UPDATE k SET [IsActive] = 1
+            FROM [dbo].[Keys] k
+            INNER JOIN @typed t ON t.[KeyId] = k.[Id]
+            WHERE k.[IsActive] = 0;
+
+            DECLARE @newKeys TABLE ([Id] INT NOT NULL, [RoomId] INT NOT NULL, [Label] NVARCHAR(100) NOT NULL);
+            INSERT INTO [dbo].[Keys] ([RoomId], [Label], [Notes])
+            OUTPUT inserted.[Id], inserted.[RoomId], inserted.[Label] INTO @newKeys ([Id], [RoomId], [Label])
+            SELECT t.[RoomId], t.[Label], N'Added from a worker request'
+            FROM @typed t
+            WHERE t.[KeyId] IS NULL;
+
+            UPDATE t SET [KeyId] = n.[Id]
+            FROM @typed t
+            INNER JOIN @newKeys n ON n.[RoomId] = t.[RoomId] AND n.[Label] = t.[Label]
+            WHERE t.[KeyId] IS NULL;
+
+            INSERT INTO @keys ([RoomId], [KeyId])
+            SELECT DISTINCT t.[RoomId], t.[KeyId]
+            FROM @typed t
+            WHERE t.[KeyId] IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM @keys x WHERE x.[RoomId] = t.[RoomId] AND x.[KeyId] = t.[KeyId]);
+        END
 
         SELECT TOP 1 @bad = CONCAT(N'Key #', x.[KeyId], N' does not open that room.')
         FROM @keys x
